@@ -16,7 +16,8 @@ Manual reference for storm depth: City of San Diego Storm Water Standards, Part 
 
 ## Use
 - Type an address (e.g. `202 C St, San Diego, CA`) or coordinates (`32.8570, -117.2555`; lon/lat order is detected), click the map, or press the location button.
-- Basemaps: Esri World Imagery (default), Esri World Topographic Map, OpenStreetMap; optional Esri reference labels (roads, places) over imagery.
+- Layout: full-bleed map with a floating search/results panel (stacks map-then-results on phones). Results open with summary tiles: storm depth, In ESA? YES/NO, In ASBS area? YES/NO, followed by the detailed cards (display only; values come from the same `screen-core.js` result).
+- Basemaps (floating switcher, top right): Esri World Imagery (default), Esri World Topographic Map, OpenStreetMap; optional Esri reference labels (roads, places) over imagery.
 - **Copy** puts a plain-text summary with sources on the clipboard.
 - Deep links: `#32.857016,-117.255523` screens a point; `?q=5180%20Tecolote%20Rd` runs an address search.
 

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <title>Stormwater Screening Map (reviewer tool) - San Diego Storm Water Reviewer Tools</title>
   <meta name="description" content="Preliminary reviewer screening of San Diego project locations against the 85th-percentile 24-hour isopluvials, Appendix O ESA, and ASBS layers. Not an official City of San Diego product.">
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%231f2937'/%3E%3Cpath d='M16 5C12 11 8 15 8 20a8 8 0 0016 0c0-5-4-9-8-15z' fill='%2360a5fa'/%3E%3C/svg%3E">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230867a8'/%3E%3Cpath d='M16 5C12 11 8 15 8 20a8 8 0 0016 0c0-5-4-9-8-15z' fill='%23fff'/%3E%3C/svg%3E">
   <link rel="stylesheet" href="../assets/vendor/leaflet/leaflet.css">
   <link rel="stylesheet" href="../assets/site.css">
   <link rel="stylesheet" href="./app.css">
@@ -17,13 +17,14 @@
   <main class="workspace">
     <aside class="sidebar" aria-label="Map tools">
       <div class="tool-head">
-        <h1>Stormwater Screening Map <span class="tag">reviewer tool</span></h1>
+        <div><span class="eyebrow-label">Site screening &middot; reviewer tool</span><h1>Stormwater Screening Map</h1></div>
         <button class="about-btn" id="aboutBtn" type="button">About &amp; sources</button>
       </div>
       <p class="disclaimer" id="disclaimer"><strong>Preliminary screening - verify with source documents. Not an official City of San Diego product.</strong></p>
       <section class="search-block">
         <label for="address">Project address or coordinates</label>
         <form class="search-row" id="searchForm" autocomplete="off">
+          <svg class="search-ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M15.5 15.5L21 21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
           <input id="address" type="search" placeholder="e.g. 202 C St, San Diego, CA  or  32.8570, -117.2555" enterkeyhint="search">
           <button id="searchBtn" type="submit">Search</button>
           <button id="locateBtn" type="button" class="icon-btn" title="Use my location" aria-label="Use my location">&#9678;</button>
@@ -48,21 +49,17 @@
       </section>
 
       <section class="controls">
-        <h2>Basemap</h2>
-        <div class="seg" role="radiogroup" aria-label="Basemap">
-          <label><input type="radio" name="basemap" value="satellite" checked><span>Satellite</span></label>
-          <label><input type="radio" name="basemap" value="topo"><span>Topographic</span></label>
-          <label><input type="radio" name="basemap" value="streets"><span>Streets</span></label>
-        </div>
-        <label class="check"><input type="checkbox" id="labelsToggle" checked> Place &amp; road labels (satellite)</label>
+        <h2>Map display</h2>
+        <label class="check switch"><input type="checkbox" id="labelsToggle" checked><span class="knob"></span> Place &amp; road labels (satellite)</label>
 
         <h2>Screening layers</h2>
-        <label class="layer-card"><input type="checkbox" data-layer="rain" checked><span class="sw sw-rain"></span>
+        <label class="layer-card switch"><input type="checkbox" data-layer="rain" checked><span class="knob"></span><span class="sw sw-rain"></span>
           <span><strong>85th-percentile 24-hr isopluvials</strong><small>County DPW HYD_85TH_PERCENT_ISOPLUVIALS</small></span><span class="status" id="rainStatus">Loading</span></label>
-        <label class="layer-card"><input type="checkbox" data-layer="esa" checked><span class="sw sw-esa"></span>
+        <label class="layer-card switch"><input type="checkbox" data-layer="esa" checked><span class="knob"></span><span class="sw sw-esa"></span>
           <span><strong>ESA (incl. 200 ft buffer)</strong><small>LDM Appendix O &middot; ESA_CSD_200ft</small></span><span class="status" id="esaStatus">Loading</span></label>
-        <label class="layer-card"><input type="checkbox" data-layer="asbs" checked><span class="sw sw-asbs"></span>
+        <label class="layer-card switch"><input type="checkbox" data-layer="asbs" checked><span class="knob"></span><span class="sw sw-asbs"></span>
           <span><strong>ASBS boundary + drainage areas</strong><small>LDM Appendix O &middot; ASBSBound, asbswatersheds_area</small></span><span class="status" id="asbsStatus">Loading</span></label>
+        <h2>Legend</h2>
         <div class="legend">
           <span><i class="ln" style="background:#eab308"></i>&lt; 0.65 in</span>
           <span><i class="ln" style="background:#f97316"></i>0.65&ndash;0.79 in</span>
@@ -80,6 +77,11 @@
     <section class="map-shell" aria-label="Interactive stormwater screening map">
       <div id="map"></div>
       <div class="map-badge">PRELIMINARY SCREENING &middot; NOT AN OFFICIAL CITY PRODUCT</div>
+      <div class="seg basemaps" role="radiogroup" aria-label="Basemap">
+        <label><input type="radio" name="basemap" value="satellite" checked><span><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="7" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M3 10h14M10 3c3 3.5 3 10.5 0 14M10 3c-3 3.5-3 10.5 0 14" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>Satellite</span></label>
+        <label><input type="radio" name="basemap" value="topo"><span><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M2 15l5-8 3 5 2-3 6 6z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>Topographic</span></label>
+        <label><input type="radio" name="basemap" value="streets"><span><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 18L8 2M16 18L12 2M10 4v2M10 9v2M10 14v2" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>Streets</span></label>
+      </div>
     </section>
   </main>
 

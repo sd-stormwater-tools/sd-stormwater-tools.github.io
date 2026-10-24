@@ -179,8 +179,15 @@
   function renderResult(r) {
     var D = r.depth, E = r.esa, B = r.asbs.boundary, A = r.asbs.drainage, h = '';
     var flags = [];
+    // at-a-glance summary (display only; same values as the cards below)
+    var esaYes = !!E.inside, asbsYes = !!(B.inside.length || A.inside.length);
+    h += '<div class="summary" aria-label="Screening summary">' +
+      '<div class="tile t-rain" style="--c:' + rainColor(D.nearest_line_in) + '"><span>Storm depth</span><b>' + D.nearest_line_in.toFixed(2) + '<small> in</small></b><em>nearest isopluvial</em></div>' +
+      '<div class="tile ' + (esaYes ? 'yes' : 'no') + '"><span>In ESA?</span><b>' + (esaYes ? 'YES' : 'NO') + '</b><em>' + (E.near_edge ? 'near edge, verify' : fmtFt(E.dist_to_edge_ft) + (esaYes ? ' to edge' : ' away')) + '</em></div>' +
+      '<div class="tile ' + (asbsYes ? 'yes' : 'no') + '"><span>In ASBS area?</span><b>' + (asbsYes ? 'YES' : 'NO') + '</b><em>' + (B.inside.length ? 'ASBS boundary' : A.inside.length ? 'drainage area' : (B.near_edge || A.near_edge) ? 'near edge, verify' : 'boundary + drainage') + '</em></div>' +
+      '</div>';
     // storm depth
-    h += '<section class="card"><h3>85th-percentile 24-hr storm depth</h3>' +
+    h += '<section class="card card-rain"><h3>85th-percentile 24-hr storm depth</h3>' +
       '<div class="big">' + D.nearest_line_in.toFixed(2) + ' in <small>nearest isopluvial</small></div>' +
       '<p>Nearest line: <b>' + D.nearest_line_in.toFixed(2) + ' in</b>, ' + fmtDist(D.nearest_line_dist_ft) + ' ' + D.nearest_dir + ' of site (searched across all isopluvials).</p>';
     if (D.second_line_in != null)
@@ -190,7 +197,7 @@
     // ESA
     var esaTxt = E.inside ? 'Inside mapped ESA' : 'Outside mapped ESA';
     if (E.inside) flags.push('ESA');
-    h += '<section class="card"><h3>Environmentally Sensitive Area (ESA, incl. 200 ft buffer)</h3>' +
+    h += '<section class="card card-esa"><h3>Environmentally Sensitive Area (ESA, incl. 200 ft buffer)</h3>' +
       '<div class="status-line">' + badge(esaTxt, E.inside ? 'flag' : 'ok') + (E.near_edge ? badge('Within 100 ft of edge - verify', 'warn') : '') + '</div>' +
       '<p>' + (E.inside ? 'Distance to ESA edge: ' : 'Distance to nearest ESA: ') + '<b>' + fmtDist(E.dist_to_edge_ft) + '</b> ' + E.dir + '.</p>' +
       (E.feature_note ? '<p class="muted">Feature note: ' + esc(E.feature_note.length > 220 ? E.feature_note.slice(0, 220) + '...' : E.feature_note) + '</p>' : '') +
@@ -200,7 +207,7 @@
     // ASBS
     var asbsTxt = B.inside.length ? 'Inside ASBS boundary' : A.inside.length ? 'Inside ASBS drainage area' : 'Outside ASBS and ASBS drainage areas';
     if (B.inside.length || A.inside.length) flags.push('ASBS');
-    h += '<section class="card"><h3>Area of Special Biological Significance (ASBS)</h3>' +
+    h += '<section class="card card-asbs"><h3>Area of Special Biological Significance (ASBS)</h3>' +
       '<div class="status-line">' + badge(asbsTxt, (B.inside.length || A.inside.length) ? 'flag' : 'ok') + ((B.near_edge || A.near_edge) ? badge('Within 100 ft of an edge - verify', 'warn') : '') + '</div>' +
       '<dl class="kv">' +
       '<dt>Inside ASBS boundary</dt><dd>' + (B.inside.length ? esc(B.inside.join(', ')) : 'No') + '</dd>' +

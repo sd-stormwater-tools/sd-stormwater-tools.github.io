@@ -8,6 +8,7 @@ A static GitHub Pages site (no server, no build step, no API keys) that collects
 | Path | Tool |
 |---|---|
 | `/screening-map/` | **Stormwater Screening Map**: screens an address, `lat, lon`, map click, or device location against the County 85th-percentile 24-hr isopluvials, the LDM Appendix O ESA layer (holes honored), and the ASBS boundary and drainage areas. It reports distance and direction to each nearest feature, with source and manual citations. See `screening-map/README.md`. |
+| `/manual-reference/` | **Manual & Code Reference**: search by reference ID or full text across SDMC Ch.14 Art.2 Div.2, Ch.4 Art.3 Div.3, Ch.14 Art.2 Div.1, the Stormwater Standards (Aug 2024 file; Parts 2-3 May 2021 Ed.), Appendix I forms, Form J-1, and the Drainage Design Manual (Jan 2017). Opens the exact PDF page (PDF.js) with printed page, edition, and a copy-ready citation. See `manual-reference/README.md`. |
 
 ## Structure
 ```
@@ -19,10 +20,17 @@ A static GitHub Pages site (no server, no build step, no API keys) that collects
 │   ├── tools.js            THE tool list (drives the nav and the home page cards) + site title/disclaimer
 │   ├── site.js             injects the shared header/nav (and footer) on every page
 │   ├── site.css            shared look: header, nav, footer, page/card styles
-│   └── vendor/leaflet/     Leaflet 1.9.4 (shared by map tools)
+│   └── vendor/
+│       ├── leaflet/        Leaflet 1.9.4 (shared by map tools)
+│       └── pdfjs/          PDF.js 3.11.174 legacy build (Apache-2.0), page viewer
 └── screening-map/
     ├── index.html, app.js, app.css, screen-core.js, README.md
-    └── data/*.geojson      isopluvials, ESA, ASBS boundary, ASBS drainage areas
+│   └── data/*.geojson      isopluvials, ESA, ASBS boundary, ASBS drainage areas
+└── manual-reference/
+    ├── index.html, app.js, app.css, README.md
+    ├── data/catalog.js     generated reference catalog (IDs, titles, PDF pages, printed labels)
+    ├── data/text-*.json    page text for full-text search
+    └── docs/*.pdf          byte-identical copies of the City PDFs (needed: sandiego.gov sends no CORS headers)
 ```
 `site.js` works out the site root from its own URL, so links work at any folder depth and under a project URL like `https://<user>.github.io/<repo>/`.
 

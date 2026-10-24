@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>BMP Sizing Calculator (reviewer tool) - San Diego Storm Water Reviewer Tools</title>
+  <meta name="description" content="Appendix B worksheets B-1, B.2-1, B.5-1 to B.5-7 and I-10.A with step-by-step equations, pass/fail checks and plan-check text. Not an official City of San Diego product.">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='16' fill='%230867a8'/%3E%3Cpath d='M16 6c-3.6 5.2-7 8.6-7 13a7 7 0 0014 0c0-4.4-3.4-7.8-7-13z' fill='%23fff'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="../assets/site.css">
+  <link rel="stylesheet" href="./app.css">
+</head>
+<body>
+  <script src="../assets/tools.js"></script>
+  <script src="../assets/site.js" data-current="bmp-sizing"></script>
+
+  <section class="hero bs-hero">
+    <div class="bs-hero-grid">
+      <div>
+        <span class="eyebrow-label">Appendix B sizing worksheets &middot; reviewer tool</span>
+        <h1>Size it. Check it.<br><em>Cite it.</em></h1>
+        <p>Worksheets B-1, B.2-1, B.5-1 through B.5-7 and I-10.A, computed with the same cell logic as the City's August 2024 Appendix B.5 Excel workbook. Every result shows its equations with your numbers substituted, a pass/fail check, and plan-check text with edition and page citations.</p>
+        <p class="bs-hero-note"><strong>Not an official City of San Diego product.</strong> Independent reviewer aid. Verify against the Stormwater Standards (Part 1 BMP Design Manual, August 2024 Edition) and the City's worksheets before relying on a result. <button type="button" class="bs-link" id="aboutBtn">About, sources &amp; differences</button></p>
+      </div>
+      <div class="bs-proj" aria-label="Project">
+        <div class="bs-proj-row">
+          <label>Project name<input id="projName" type="text" placeholder="e.g. PTS 123456 - Main St"></label>
+          <label>Active BMP<select id="bmpSel"></select></label>
+        </div>
+        <div class="bs-carried" id="carried"></div>
+        <div class="bs-proj-btns">
+          <button type="button" id="saveBtn" title="Download the project as a JSON file">Save project</button>
+          <label class="bs-file" title="Open a saved project JSON file">Open project<input type="file" id="openFile" accept=".json,application/json"></label>
+          <button type="button" id="printBtn">Print worksheet</button>
+          <button type="button" id="resetBtn" class="ghost">Reset</button>
+        </div>
+        <p class="bs-saved" id="savedNote">Inputs are kept in this browser only (local storage).</p>
+      </div>
+    </div>
+  </section>
+
+  <nav class="bs-picker" aria-label="Worksheets"><div class="bs-wrap"><div class="bs-cards" id="picker" role="tablist"></div></div></nav>
+
+  <main class="bs-wrap bs-main">
+    <section class="bs-sheet" id="sheet" aria-live="polite"></section>
+    <aside class="bs-side" id="side"></aside>
+  </main>
+
+  <dialog id="about" class="bs-about">
+    <form method="dialog"><button class="close" aria-label="Close">&times;</button></form>
+    <div id="aboutBody"></div>
+  </dialog>
+
+  <script src="../manual-reference/data/thumbs.js"></script>
+  <script src="./data/b5-workbook.js"></script>
+  <script src="./engine.js"></script>
+  <script src="./app.js"></script>
+</body>
+</html>

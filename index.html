@@ -5,18 +5,40 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <title>San Diego Storm Water Reviewer Tools</title>
   <meta name="description" content="Independent reference tools for San Diego storm water plan review. Not an official City of San Diego product.">
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%231f2937'/%3E%3Cpath d='M16 5C12 11 8 15 8 20a8 8 0 0016 0c0-5-4-9-8-15z' fill='%2360a5fa'/%3E%3C/svg%3E">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='16' fill='%230867a8'/%3E%3Cpath d='M16 6c-3.6 5.2-7 8.6-7 13a7 7 0 0014 0c0-4.4-3.4-7.8-7-13z' fill='%23fff'/%3E%3C/svg%3E">
   <link rel="stylesheet" href="./assets/site.css">
+  <style>
+    .home-hero{padding:54px clamp(20px,7vw,108px) 64px}
+    .home-hero-grid{display:grid;grid-template-columns:1.15fr .85fr;gap:48px;align-items:center;max-width:1180px;margin:0 auto;position:relative;z-index:1}
+    .home-hero .notice{margin-top:18px;max-width:620px}
+    .hero-stack{position:relative;height:270px;margin:0}
+    .hero-stack .pg{position:absolute;width:170px;height:196px;border-radius:4px;background-color:#fff;box-shadow:0 18px 40px #00142a66;border:1px solid #ffffff55}
+    .hero-stack .pg:nth-child(1){left:6%;top:24px;transform:rotate(-8deg)}
+    .hero-stack .pg:nth-child(2){left:32%;top:6px;transform:rotate(1deg);z-index:2}
+    .hero-stack .pg:nth-child(3){left:58%;top:30px;transform:rotate(8deg)}
+    .hero-stack figcaption{position:absolute;bottom:-30px;left:0;right:0;text-align:center;font-size:11px;color:#a9cbd6;letter-spacing:.04em}
+    .home-main{max-width:1180px;margin:-34px auto 0;padding:0 clamp(16px,4vw,40px) 50px;position:relative;z-index:2}
+    .home-main h2{font:400 26px/1.15 var(--serif);margin:40px 0 14px}
+    .home-main .cards{margin-top:0}
+    @media (max-width:820px){.home-hero-grid{grid-template-columns:1fr}.hero-stack{height:225px;max-width:380px}.hero-stack .pg{width:130px;height:150px}.home-main{margin-top:-20px}}
+  </style>
 </head>
 <body>
   <script src="./assets/tools.js"></script>
   <script src="./assets/site.js" data-current="home"></script>
-  <main class="page">
-    <h1>San Diego Storm Water Reviewer Tools</h1>
-    <p class="lead">Independent reference tools for reviewing storm water submittals for projects in San Diego. Each tool links back to the public source data and manual sections it relies on, so results can be checked against the governing documents.</p>
-    <p class="notice"><strong>Not an official City of San Diego product. Preliminary reference tools - verify with source documents.</strong></p>
-
-    <h2>Tools</h2>
+  <script src="./manual-reference/data/thumbs.js"></script>
+  <section class="hero home-hero">
+    <div class="home-hero-grid">
+      <div>
+        <span class="eyebrow-label">Independent plan review toolkit</span>
+        <h1>San Diego Storm Water<br><em>Reviewer Tools</em></h1>
+        <p>Reference tools for reviewing storm water submittals for projects in San Diego. Each tool links back to the public source data and the manual or code sections it relies on, so results can be checked against the governing documents.</p>
+        <p class="notice"><strong>Not an official City of San Diego product. Preliminary reference tools - verify with source documents.</strong></p>
+      </div>
+      <figure class="hero-stack" aria-hidden="true" id="heroStack"><figcaption>Pages from the City's published manuals, as shown in the Manual &amp; Code Reference</figcaption></figure>
+    </div>
+  </section>
+  <main class="home-main">
     <div class="cards" id="toolCards"></div>
     <noscript><p><a href="./screening-map/">Stormwater Screening Map</a> &middot; <a href="./manual-reference/">Manual &amp; Code Reference</a></p></noscript>
 
@@ -33,10 +55,37 @@
   <script>
     (function () {
       var esc = function (s) { return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
+      var T = window.MR_THUMBS;
+      /* page thumbnail from the pre-rendered sprites (real manual pages, never redrawn) */
+      function thumb(doc, page, w) {
+        if (!T || !T.files[doc]) return '';
+        var i = page - 1, f = T.files[doc][Math.floor(i / T.per)], k = i % T.per, s = w / T.w;
+        return 'background-image:url(' + window.SW_ROOT + 'manual-reference/' + f + ');background-size:' + (T.cols * T.w * s) + 'px auto;background-repeat:no-repeat;background-position:-' + ((k % T.cols) * T.w * s) + 'px -' + (Math.floor(k / T.cols) * T.h * s) + 'px;';
+      }
+      var ART = {
+        'screening-map': '<svg viewBox="0 0 400 150" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><rect width="400" height="150" fill="#d9e8e3"/>' +
+          '<path d="M0 118 C60 96 120 132 190 112 S320 86 400 104 L400 150 L0 150Z" fill="#9fc9d8"/>' +
+          '<g fill="none" stroke="#0867a8" stroke-width="1.6" opacity=".75"><path d="M-10 40 C80 10 150 70 240 38 S360 10 410 30"/><path d="M-10 66 C90 40 170 96 260 64 S370 40 410 58"/><path d="M-10 92 C100 70 180 116 280 90 S380 70 410 84"/></g>' +
+          '<path d="M250 20 L330 34 L344 84 L292 100 L238 70Z" fill="#18a6a5" fill-opacity=".28" stroke="#0b7d7c" stroke-width="1.5" stroke-dasharray="5 3"/>' +
+          '<g transform="translate(176 46)"><path d="M12 0C5 0 0 5 0 12c0 9 12 22 12 22s12-13 12-22C24 5 19 0 12 0z" fill="#b91c1c"/><circle cx="12" cy="12" r="4.5" fill="#fff"/></g>' +
+          '<g font-family="Arial" font-size="10" fill="#0b3a5a"><text x="18" y="34">0.60 in</text><text x="18" y="60">0.55 in</text><text x="18" y="86">0.50 in</text><text x="258" y="60">ESA</text><text x="300" y="138" fill="#fff">ASBS</text></g></svg>',
+        'manual-reference': function () {
+          return '<div style="position:absolute;inset:0;background:linear-gradient(115deg,#0b3d5e,#0a7180)"></div>' +
+            [['sws', 93, -7, 24], ['sws', 103, 0, 118], ['sws', 226, 7, 212]].map(function (p) {
+              return '<span style="position:absolute;top:18px;left:' + p[3] + 'px;width:96px;height:110px;transform:rotate(' + p[2] + 'deg);box-shadow:0 10px 24px #0006;background-color:#fff;' + thumb(p[0], p[1], 96) + '"></span>';
+            }).join('');
+        }
+      };
       document.getElementById('toolCards').innerHTML = window.SW_TOOLS.map(function (t) {
-        return '<a class="card-link" href="' + window.SW_ROOT + t.path + '"><h3>' + esc(t.title) + '</h3><p>' + esc(t.summary) + '</p>' +
-          (t.tags && t.tags.length ? '<div class="tags">' + t.tags.map(function (g) { return '<span>' + esc(g) + '</span>'; }).join('') + '</div>' : '') + '</a>';
+        var art = ART[t.id]; art = typeof art === 'function' ? art() : (art || '');
+        return '<a class="card-link" href="' + window.SW_ROOT + t.path + '">' + (art ? '<div class="card-art">' + art + '</div>' : '') +
+          '<div class="card-body"><h3>' + esc(t.title) + '</h3><p>' + esc(t.summary) + '</p>' +
+          (t.tags && t.tags.length ? '<div class="tags">' + t.tags.map(function (g) { return '<span>' + esc(g) + '</span>'; }).join('') + '</div>' : '') +
+          '<div class="card-go">OPEN TOOL &rsaquo;</div></div></a>';
       }).join('');
+      document.getElementById('heroStack').insertAdjacentHTML('afterbegin', [['sws', 93], ['sws', 104], ['ddm', 83]].map(function (p) {
+        return '<span class="pg" style="' + thumb(p[0], p[1], window.innerWidth < 820 ? 130 : 170) + '"></span>';
+      }).join(''));
     })();
   </script>
 </body>

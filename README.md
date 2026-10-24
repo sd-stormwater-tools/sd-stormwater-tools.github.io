@@ -19,7 +19,7 @@ A static GitHub Pages site (no server, no build step, no API keys) that collects
 ├── assets/
 │   ├── tools.js            THE tool list (drives the nav and the home page cards) + site title/disclaimer
 │   ├── site.js             injects the shared header/nav (and footer) on every page
-│   ├── site.css            shared look: header, nav, footer, page/card styles
+│   ├── site.css            shared look: palette, Georgia headings, header, nav, navy hero/footer, cards
 │   └── vendor/
 │       ├── leaflet/        Leaflet 1.9.4 (shared by map tools)
 │       └── pdfjs/          PDF.js 3.11.174 legacy build (Apache-2.0), page viewer
@@ -30,6 +30,8 @@ A static GitHub Pages site (no server, no build step, no API keys) that collects
     ├── index.html, app.js, app.css, README.md
     ├── data/catalog.js     generated reference catalog (IDs, titles, PDF pages, printed labels)
     ├── data/text-*.json    page text for full-text search
+    ├── data/thumbs.js      thumbnail sprite geometry (also used by the home page)
+    ├── thumbs/*.webp       page thumbnails pre-rendered from docs/*.pdf (50 per sprite)
     └── docs/*.pdf          byte-identical copies of the City PDFs (needed: sandiego.gov sends no CORS headers)
 ```
 `site.js` works out the site root from its own URL, so links work at any folder depth and under a project URL like `https://<user>.github.io/<repo>/`.

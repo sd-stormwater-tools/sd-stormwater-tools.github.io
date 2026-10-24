@@ -40,7 +40,7 @@
   </section>
   <main class="home-main">
     <div class="cards" id="toolCards"></div>
-    <noscript><p><a href="./screening-map/">Stormwater Screening Map</a> &middot; <a href="./manual-reference/">Manual &amp; Code Reference</a></p></noscript>
+    <noscript><p><a href="./screening-map/">Stormwater Screening Map</a> &middot; <a href="./manual-reference/">Manual &amp; Code Reference</a> &middot; <a href="./bmp-sizing/">BMP Sizing Calculator</a></p></noscript>
 
     <h2>Key references</h2>
     <ul class="refs-list">
@@ -74,6 +74,15 @@
             [['sws', 93, -7, 24], ['sws', 103, 0, 118], ['sws', 226, 7, 212]].map(function (p) {
               return '<span style="position:absolute;top:18px;left:' + p[3] + 'px;width:96px;height:110px;transform:rotate(' + p[2] + 'deg);box-shadow:0 10px 24px #0006;background-color:#fff;' + thumb(p[0], p[1], 96) + '"></span>';
             }).join('');
+        },
+        'bmp-sizing': function () {
+          return '<div style="position:absolute;inset:0;background:linear-gradient(115deg,#092e4a,#0b5276 60%,#0a7180)"></div>' +
+            [['sws', 218, -6, 20], ['sws', 222, 2, 104], ['sws', 230, 8, 188]].map(function (p) {
+              return '<span style="position:absolute;top:16px;left:' + p[3] + 'px;width:92px;height:106px;transform:rotate(' + p[2] + 'deg);box-shadow:0 10px 24px #0006;background-color:#fff;' + thumb(p[0], p[1], 92) + '"></span>';
+            }).join('') +
+            '<span style="position:absolute;right:14px;bottom:14px;display:flex;flex-direction:column;gap:6px;align-items:flex-end;font:800 11px/1 Arial,sans-serif;letter-spacing:.08em">' +
+            '<span style="background:#15803d;color:#fff;border-radius:999px;padding:5px 10px">&#10003; YES</span><span style="background:#b91c1c;color:#fff;border-radius:999px;padding:5px 10px">&#10007; NO</span>' +
+            '<span style="background:#fff;color:#0b5c6b;border-radius:5px;padding:5px 8px;font-family:Georgia,serif;font-weight:400;letter-spacing:0;font-size:12px">DCV = 3630 &times; C &times; d &times; A</span></span>';
         }
       };
       document.getElementById('toolCards').innerHTML = window.SW_TOOLS.map(function (t) {

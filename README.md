@@ -9,6 +9,7 @@ A static GitHub Pages site (no server, no build step, no API keys) that collects
 |---|---|
 | `/screening-map/` | **Stormwater Screening Map**: screens an address, `lat, lon`, map click, or device location against the County 85th-percentile 24-hr isopluvials, the LDM Appendix O ESA layer (holes honored), and the ASBS boundary and drainage areas. It reports distance and direction to each nearest feature, with source and manual citations. See `screening-map/README.md`. |
 | `/manual-reference/` | **Manual & Code Reference**: search by reference ID or full text across SDMC Ch.14 Art.2 Div.2, Ch.4 Art.3 Div.3, Ch.14 Art.2 Div.1, the Stormwater Standards (Aug 2024 file; Parts 2-3 May 2021 Ed.), Appendix I forms, Form J-1, and the Drainage Design Manual (Jan 2017). Opens the exact PDF page (PDF.js) with printed page, edition, and a copy-ready citation. See `manual-reference/README.md`. |
+| `/bmp-sizing/` | **BMP Sizing Calculator**: Worksheets B-1, Table B.1-1 / Eq. B.1-2 (with the Table B.2-1 dispersion adjustment), B.2-1, B.5-1 to B.5-7 (2024 B.5-4) and I-10.A. The B.5 worksheets are evaluated on the formulas and lookup tables of the City's Appendix B.5 Excel workbook (Version 2.0, Aug 2024), with step-by-step equations, YES/NO checks, and copyable plan-check text with citations. See `bmp-sizing/README.md`. |
 
 ## Structure
 ```
@@ -33,6 +34,10 @@ A static GitHub Pages site (no server, no build step, no API keys) that collects
     ├── data/thumbs.js      thumbnail sprite geometry (also used by the home page)
     ├── thumbs/*.webp       page thumbnails pre-rendered from docs/*.pdf (50 per sprite)
     └── docs/*.pdf          byte-identical copies of the City PDFs (needed: sandiego.gov sends no CORS headers)
+└── bmp-sizing/
+    ├── index.html, app.js, app.css, README.md
+    ├── engine.js           small spreadsheet-formula evaluator (IF, ROUND, INDEX/MATCH, VLOOKUP, ...)
+    └── data/b5-workbook.js generated from the City Appendix B.5 Excel workbook (formulas, constants, lookup tables)
 ```
 `site.js` works out the site root from its own URL, so links work at any folder depth and under a project URL like `https://<user>.github.io/<repo>/`.
 

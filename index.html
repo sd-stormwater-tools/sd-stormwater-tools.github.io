@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>San Diego Storm Water Reviewer Tools</title>
+  <meta name="description" content="Independent reference tools for San Diego storm water plan review. Not an official City of San Diego product.">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%231f2937'/%3E%3Cpath d='M16 5C12 11 8 15 8 20a8 8 0 0016 0c0-5-4-9-8-15z' fill='%2360a5fa'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="./assets/site.css">
+</head>
+<body>
+  <script src="./assets/tools.js"></script>
+  <script src="./assets/site.js" data-current="home"></script>
+  <main class="page">
+    <h1>San Diego Storm Water Reviewer Tools</h1>
+    <p class="lead">Independent reference tools for reviewing storm water submittals for projects in San Diego. Each tool links back to the public source data and manual sections it relies on, so results can be checked against the governing documents.</p>
+    <p class="notice"><strong>Not an official City of San Diego product. Preliminary reference tools - verify with source documents.</strong></p>
+
+    <h2>Tools</h2>
+    <div class="cards" id="toolCards"></div>
+    <noscript><p><a href="./screening-map/">Stormwater Screening Map</a></p></noscript>
+
+    <h2>Key references</h2>
+    <ul class="refs-list">
+      <li><a href="https://www.sandiego.gov/planning/programs/landdevcode/landdevmanual" target="_blank" rel="noopener">City of San Diego Land Development Manual</a>
+        <small>Storm Water Standards (Part 1 BMP Design Manual, Aug 2024 Ed.), Drainage Design Manual, and Appendix O GIS files (ESA and ASBS shapefiles, SWQMP templates, worksheets).</small></li>
+      <li><a href="https://www.sandiego.gov/city-clerk/officialdocs/municipal-code" target="_blank" rel="noopener">San Diego Municipal Code</a>
+        <small>Including Ch. 4, Art. 3, Div. 3 (Stormwater Management and Discharge Control) and Ch. 14, Art. 2, Div. 2 (Storm Water Runoff and Drainage Regulations).</small></li>
+      <li><a href="https://gis-public.sandiegocounty.gov/arcgis/rest/services/sdep_warehouse/HYD_85TH_PERCENT_ISOPLUVIALS/FeatureServer/0" target="_blank" rel="noopener">County of San Diego 85th Percentile Isopluvials (HYD_85TH_PERCENT_ISOPLUVIALS)</a>
+        <small>Public County DPW map service for the 85th-percentile 24-hour storm depth lines (see Figure B.1-1, Storm Water Standards Part 1).</small></li>
+    </ul>
+  </main>
+  <script>
+    (function () {
+      var esc = function (s) { return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
+      document.getElementById('toolCards').innerHTML = window.SW_TOOLS.map(function (t) {
+        return '<a class="card-link" href="' + window.SW_ROOT + t.path + '"><h3>' + esc(t.title) + '</h3><p>' + esc(t.summary) + '</p>' +
+          (t.tags && t.tags.length ? '<div class="tags">' + t.tags.map(function (g) { return '<span>' + esc(g) + '</span>'; }).join('') + '</div>' : '') + '</a>';
+      }).join('');
+    })();
+  </script>
+</body>
+</html>

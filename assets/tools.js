@@ -11,5 +11,12 @@ window.SW_TOOLS = [
     title: 'Stormwater Screening Map',
     summary: 'Screen an address, coordinates, or map click against the 85th-percentile 24-hour isopluvials, Appendix O ESA, and ASBS layers, with distance and direction to each nearest feature and source citations.',
     tags: ['Storm depth (Figure B.1-1)', 'ESA', 'ASBS', 'Satellite map']
+  },
+  {
+    id: 'manual-reference',
+    path: 'manual-reference/',
+    title: 'Manual & Code Reference',
+    summary: 'Search and open exact pages of the Municipal Code storm water divisions, the Stormwater Standards (Aug 2024), and the Drainage Design Manual (Jan 2017): sections, tables, figures, worksheets, forms, and full text, with edition and printed-page citations.',
+    tags: ['SDMC', 'Storm Water Standards', 'Drainage Design Manual', 'Worksheets & forms']
   }
 ];

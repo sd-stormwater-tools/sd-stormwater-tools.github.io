@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>Manual &amp; Code Reference (reviewer tool) - San Diego Storm Water Reviewer Tools</title>
+  <meta name="description" content="Search and open exact pages of the San Diego Municipal Code storm water divisions, the Stormwater Standards Manual, and the Drainage Design Manual, with edition and page citations. Not an official City of San Diego product.">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%231f2937'/%3E%3Cpath d='M16 5C12 11 8 15 8 20a8 8 0 0016 0c0-5-4-9-8-15z' fill='%2360a5fa'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="../assets/site.css">
+  <link rel="stylesheet" href="./app.css">
+</head>
+<body>
+  <script src="../assets/tools.js"></script>
+  <script src="../assets/site.js" data-current="manual-reference" data-footer="none"></script>
+
+  <main class="mr-workspace">
+    <aside class="mr-side" aria-label="Search and browse">
+      <div class="mr-head">
+        <h1>Manual &amp; Code Reference <span class="tag">reviewer tool</span></h1>
+        <button class="about-btn" id="aboutBtn" type="button">About &amp; sources</button>
+      </div>
+      <p class="mr-disclaimer"><strong>Not an official City of San Diego product.</strong> Pages shown are unaltered copies of the City's published PDFs. Verify against the current documents on sandiego.gov before citing.</p>
+
+      <form class="mr-search" id="searchForm" role="search" autocomplete="off">
+        <label for="q">Find a section, table, figure, worksheet, form, code section, or any phrase</label>
+        <div class="mr-search-row">
+          <input id="q" type="search" placeholder="Try B.5-4, Table 5-1, Form I-3B, 142.0220, DCV, freeboard" enterkeyhint="search">
+          <button type="button" id="clearBtn" class="icon-btn" aria-label="Clear search">&times;</button>
+        </div>
+        <div class="mr-filter" role="group" aria-label="Documents to search">
+          <label><input type="checkbox" name="grp" value="Municipal Code" checked> Municipal Code</label>
+          <label><input type="checkbox" name="grp" value="Storm Water Standards" checked> Storm Water Standards</label>
+          <label><input type="checkbox" name="grp" value="Drainage Design Manual" checked> Drainage Design Manual</label>
+        </div>
+      </form>
+      <div class="mr-quick" id="quick" aria-label="Frequently used"></div>
+      <div id="results" class="mr-results" aria-live="polite"></div>
+
+      <section class="mr-browse" id="browse">
+        <h2>Browse</h2>
+        <div class="mr-browse-row">
+          <label for="docSel" class="sr">Document</label>
+          <select id="docSel"></select>
+          <label for="typeSel" class="sr">Type</label>
+          <select id="typeSel"></select>
+        </div>
+        <ol class="mr-list" id="browseList"></ol>
+      </section>
+    </aside>
+
+    <section class="mr-viewer" id="viewer" aria-label="Page viewer">
+      <div class="mr-bar" id="bar">
+        <div class="mr-bar-info">
+          <p class="eyebrow" id="vDoc">Select a reference or search result</p>
+          <h2 id="vTitle">Nothing open yet</h2>
+          <p class="mr-meta" id="vMeta"></p>
+        </div>
+        <div class="mr-bar-tools" id="vTools" hidden>
+          <div class="mr-pager">
+            <button type="button" id="prevBtn" aria-label="Previous page">&lsaquo;</button>
+            <form id="pageForm"><label for="pageIn" class="sr">PDF page</label><input id="pageIn" inputmode="numeric" size="4"><span id="pageOf"></span></form>
+            <button type="button" id="nextBtn" aria-label="Next page">&rsaquo;</button>
+          </div>
+          <div class="mr-zoom">
+            <button type="button" id="zoomOut" aria-label="Zoom out">&minus;</button>
+            <button type="button" id="zoomFit">Fit</button>
+            <button type="button" id="zoomIn" aria-label="Zoom in">+</button>
+          </div>
+          <button type="button" id="citeBtn" class="primary">Copy citation</button>
+          <a id="officialLink" target="_blank" rel="noopener">City PDF &#8599;</a>
+        </div>
+      </div>
+      <div class="mr-notes" id="vNotes" hidden></div>
+      <div class="mr-stage" id="stage">
+        <div class="mr-empty" id="empty">
+          <h3>How to use</h3>
+          <ul>
+            <li>Type a reference ID (<code>B.5-4</code>, <code>Table 1-2</code>, <code>Form I-1</code>, <code>142.0220</code>) to jump straight to it, or any phrase to search the full text of every document.</li>
+            <li>Pages open from unaltered copies of the City PDFs, with the printed page label and edition for citations.</li>
+            <li><strong>Copy citation</strong> gives a ready-to-paste reference. <strong>Page text</strong> (below each page) lets you copy a verbatim excerpt.</li>
+            <li>Reference hierarchy: Municipal Code &rarr; Storm Water Standards &rarr; Drainage Design Manual. Results are listed in that order.</li>
+          </ul>
+        </div>
+        <div class="mr-canvas-wrap" id="canvasWrap" hidden>
+          <div class="mr-page" id="pageBox"><canvas id="canvas"></canvas><div class="mr-hl" id="hl"></div></div>
+          <p class="mr-status" id="status"></p>
+        </div>
+        <details class="mr-text" id="textBox" hidden>
+          <summary>Page text (for copying verbatim excerpts)</summary>
+          <pre id="pageText"></pre>
+        </details>
+      </div>
+    </section>
+  </main>
+
+  <dialog id="about" class="mr-about">
+    <form method="dialog"><button class="close" aria-label="Close">&times;</button></form>
+    <h2>About &amp; sources</h2>
+    <p><strong>Not an official City of San Diego product.</strong> Independent reviewer reference tool. It does not replace the governing documents; confirm the current edition on sandiego.gov before relying on any page.</p>
+    <p>Reference hierarchy used for ordering results: (1) San Diego Municipal Code, (2) Stormwater Standards Manual, (3) Drainage Design Manual.</p>
+    <div id="aboutDocs"></div>
+    <p class="muted">Page numbers in this tool are PDF page numbers of the hosted copies, which are byte-identical to the City files listed above (MD5 shown). Printed page labels are read from each page's footer. The Stormwater Standards file bundles Part 1 (August 2024 Edition) with Parts 2 and 3, which still carry their May 2021 Edition footers. The City's separate January 2018 sizing/feasibility worksheets PDF is not used here because it predates the August 2024 revisions to Worksheets B.5-2 and B.5-4; use Appendix B of the manual or the City's 2024 Excel worksheets.</p>
+  </dialog>
+
+  <script src="../assets/vendor/pdfjs/pdf.min.js"></script>
+  <script src="./data/catalog.js"></script>
+  <script src="./app.js"></script>
+</body>
+</html>

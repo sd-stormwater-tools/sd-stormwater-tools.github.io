@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>Stormwater Screening Map (reviewer tool) - San Diego Storm Water Reviewer Tools</title>
+  <meta name="description" content="Preliminary reviewer screening of San Diego project locations against the 85th-percentile 24-hour isopluvials, Appendix O ESA, and ASBS layers. Not an official City of San Diego product.">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%231f2937'/%3E%3Cpath d='M16 5C12 11 8 15 8 20a8 8 0 0016 0c0-5-4-9-8-15z' fill='%2360a5fa'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="../assets/vendor/leaflet/leaflet.css">
+  <link rel="stylesheet" href="../assets/site.css">
+  <link rel="stylesheet" href="./app.css">
+</head>
+<body>
+  <script src="../assets/tools.js"></script>
+  <script src="../assets/site.js" data-current="screening-map" data-footer="none"></script>
+
+  <main class="workspace">
+    <aside class="sidebar" aria-label="Map tools">
+      <div class="tool-head">
+        <h1>Stormwater Screening Map <span class="tag">reviewer tool</span></h1>
+        <button class="about-btn" id="aboutBtn" type="button">About &amp; sources</button>
+      </div>
+      <p class="disclaimer" id="disclaimer"><strong>Preliminary screening - verify with source documents. Not an official City of San Diego product.</strong></p>
+      <section class="search-block">
+        <label for="address">Project address or coordinates</label>
+        <form class="search-row" id="searchForm" autocomplete="off">
+          <input id="address" type="search" placeholder="e.g. 202 C St, San Diego, CA  or  32.8570, -117.2555" enterkeyhint="search">
+          <button id="searchBtn" type="submit">Search</button>
+          <button id="locateBtn" type="button" class="icon-btn" title="Use my location" aria-label="Use my location">&#9678;</button>
+        </form>
+        <p class="hint">Search an address, type <code>lat, lon</code>, click the map, or use your location.</p>
+        <div id="searchMsg" class="search-msg" aria-live="polite"></div>
+        <ul id="altMatches" class="alt-matches" hidden></ul>
+      </section>
+
+      <section class="results" id="results" aria-live="polite">
+        <div class="results-head">
+          <div>
+            <p class="eyebrow">Screening result</p>
+            <h2 id="placeName">Search or click the map to screen a site</h2>
+            <p id="coordinates" class="coords">&mdash;</p>
+          </div>
+          <button id="copyBtn" class="small-btn" type="button" hidden>Copy</button>
+        </div>
+        <div id="resultBody" class="result-body">
+          <p class="muted">Results show the 85th-percentile 24-hour storm depth, ESA status, and ASBS status with distance and direction to each nearest feature.</p>
+        </div>
+      </section>
+
+      <section class="controls">
+        <h2>Basemap</h2>
+        <div class="seg" role="radiogroup" aria-label="Basemap">
+          <label><input type="radio" name="basemap" value="satellite" checked><span>Satellite</span></label>
+          <label><input type="radio" name="basemap" value="topo"><span>Topographic</span></label>
+          <label><input type="radio" name="basemap" value="streets"><span>Streets</span></label>
+        </div>
+        <label class="check"><input type="checkbox" id="labelsToggle" checked> Place &amp; road labels (satellite)</label>
+
+        <h2>Screening layers</h2>
+        <label class="layer-card"><input type="checkbox" data-layer="rain" checked><span class="sw sw-rain"></span>
+          <span><strong>85th-percentile 24-hr isopluvials</strong><small>County DPW HYD_85TH_PERCENT_ISOPLUVIALS</small></span><span class="status" id="rainStatus">Loading</span></label>
+        <label class="layer-card"><input type="checkbox" data-layer="esa" checked><span class="sw sw-esa"></span>
+          <span><strong>ESA (incl. 200 ft buffer)</strong><small>LDM Appendix O &middot; ESA_CSD_200ft</small></span><span class="status" id="esaStatus">Loading</span></label>
+        <label class="layer-card"><input type="checkbox" data-layer="asbs" checked><span class="sw sw-asbs"></span>
+          <span><strong>ASBS boundary + drainage areas</strong><small>LDM Appendix O &middot; ASBSBound, asbswatersheds_area</small></span><span class="status" id="asbsStatus">Loading</span></label>
+        <div class="legend">
+          <span><i class="ln" style="background:#eab308"></i>&lt; 0.65 in</span>
+          <span><i class="ln" style="background:#f97316"></i>0.65&ndash;0.79 in</span>
+          <span><i class="ln" style="background:#dc2626"></i>&ge; 0.80 in</span>
+        </div>
+        <div class="legend">
+          <span><i class="bx" style="background:#22c55e55;border-color:#15803d"></i>ESA</span>
+          <span><i class="bx" style="background:#2563eb88;border-color:#1e3a8a"></i>ASBS</span>
+          <span><i class="bx dash" style="background:#60a5fa33;border-color:#2563eb"></i>ASBS drainage area</span>
+        </div>
+        <button id="resetBtn" class="text-btn" type="button">Reset to full San Diego view</button>
+      </section>
+    </aside>
+
+    <section class="map-shell" aria-label="Interactive stormwater screening map">
+      <div id="map"></div>
+      <div class="map-badge">PRELIMINARY SCREENING &middot; NOT AN OFFICIAL CITY PRODUCT</div>
+    </section>
+  </main>
+
+  <dialog id="aboutDialog">
+    <button class="dialog-close" id="closeDialog" aria-label="Close">&times;</button>
+    <h2>About this reviewer tool</h2>
+    <p class="notice"><strong>Preliminary screening - verify with source documents. Not an official City of San Diego product.</strong> Layer boundaries and services can change. Do not use a screening result as a final jurisdictional, design, or permit determination.</p>
+    <h3>How results are computed</h3>
+    <ul>
+      <li><b>Storm depth:</b> the nearest 85th-percentile 24-hour isopluvial is searched across <em>all</em> lines (not just the visible map). Distances are measured in NAD83 / California Zone VI (EPSG:2230, US survey ft). An interpolated value between the two nearest lines of different value is shown only as a labeled <em>Reviewer note</em>; the manual requires the depth to be determined using Figure B.1-1 and does not specify interpolation.</li>
+      <li><b>ESA:</b> point-in-polygon honoring the polygon holes (areas excluded from the mapped ESA). Distance is to the nearest ESA edge. Points within 100 ft of an edge are flagged to verify.</li>
+      <li><b>ASBS:</b> reports separately whether the site is inside an ASBS boundary or inside an ASBS drainage area, with distance and direction to each.</li>
+    </ul>
+    <h3>Data sources</h3>
+    <ul id="sourceList"></ul>
+    <h3>Manual references</h3>
+    <ul id="manualList"></ul>
+    <h3>Geocoding</h3>
+    <p>Addresses are matched with the U.S. Census Geocoder (onelineaddress, benchmark Public_AR_Current) using JSONP, because that service does not send CORS headers. If no match is found, variants are tried (adding ", CA", dropping "San Diego", ZIP-based community names such as La Jolla). As a last resort OpenStreetMap Nominatim, then Photon (komoot, OpenStreetMap data), is used and the result is labeled as a fallback to verify.</p>
+    <p><a href="../">Back to all reviewer tools</a></p>
+    <p>Basemaps: Esri World Imagery, Esri World Topographic Map, Esri reference labels, OpenStreetMap. Map library: Leaflet 1.9.4.</p>
+  </dialog>
+
+  <script src="../assets/vendor/leaflet/leaflet.js"></script>
+  <script src="./screen-core.js"></script>
+  <script src="./app.js"></script>
+</body>
+</html>

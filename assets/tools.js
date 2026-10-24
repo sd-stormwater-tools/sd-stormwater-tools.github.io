@@ -18,5 +18,12 @@ window.SW_TOOLS = [
     title: 'Manual & Code Reference',
     summary: 'Search and open exact pages of the Municipal Code storm water divisions, the Stormwater Standards (Aug 2024), and the Drainage Design Manual (Jan 2017): sections, tables, figures, worksheets, forms, and full text, with edition and printed-page citations.',
     tags: ['SDMC', 'Storm Water Standards', 'Drainage Design Manual', 'Worksheets & forms']
+  },
+  {
+    id: 'bmp-sizing',
+    path: 'bmp-sizing/',
+    title: 'BMP Sizing Calculator',
+    summary: 'Worksheets B-1, B.2-1, B.5-1 to B.5-7 and I-10.A computed with the cell logic of the City\'s August 2024 Appendix B.5 Excel workbook, with equations shown step by step, YES/NO checks, and copyable plan-check calcs with edition and page citations.',
+    tags: ['DCV (B.2-1)', 'Biofiltration (B.5-1)', 'Retention (B.5-2 to B.5-7)', 'Compact biofiltration (I-10.A)']
   }
 ];

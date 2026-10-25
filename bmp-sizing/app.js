@@ -1,6 +1,8 @@
 /* BMP Sizing Calculator - reviewer tool. Not an official City of San Diego product.
  * Worksheets B.5-1..B.5-7 are evaluated by engine.js on the formulas of the City's Appendix B.5 Excel workbook
  * (Version 2.0, August 2024; data/b5-workbook.js), so rounding and lookups match the City file cell for cell.
+ * Line wording on screen is the workbook's own text (WBD.sheets[..].text); reviewer notes are labelled.
+ * Where the workbook and the manual PDF differ, the workbook governs and the manual page is cited in a flag.
  * B-1, Table B.1-1/B.2-1, B.2-1 and I-10.A are computed here from the manual / Form I-10 text.
  * Departures from the workbook are listed in FIXES and labelled on screen. */
 (function () {
@@ -68,7 +70,25 @@
   }
   function g(id, cell) { return evalSheet(id).get(cell); }
   function lineVal(id, n) { var L = SPECS[id].lines.filter(function (x) { return x.n === n; })[0]; return L.t === 'in' ? inVal(id, L) : g(id, L.cell); }
-  function b54manual() { /* Line 9 per the manual: Line 8 / (Line 2[b] / (Line 1/12)) */
+  /* verbatim worksheet wording for a line: text cells left of the value cell on the same row, plus L.wbx continuation cells */
+  function coln(a) { var m = /^([A-Z]+)(\d+)$/.exec(a), n = 0; for (var i = 0; i < m[1].length; i++) n = n * 26 + m[1].charCodeAt(i) - 64; return [n, +m[2]]; }
+  function wbCell(id, a) { var sh = WBD.sheets[SPECS[id].sheet]; return sh && sh.text ? sh.text[a] : undefined; }
+  function wbText(id, L) {
+    var sh = SPECS[id] && WBD.sheets[SPECS[id].sheet], tx = sh && sh.text; if (!tx || !L.cell) return null;
+    var vc = coln(L.cell), out = [];
+    Object.keys(tx).forEach(function (a) { var q = coln(a); if (q[1] === vc[1] && q[0] >= 2 && q[0] < vc[0]) out.push([q[0], tx[a]]); });
+    out.sort(function (x, y) { return x[0] - y[0]; });
+    var t = out.map(function (x) { return x[1]; }).concat((L.wbx || []).map(function (a) { return tx[a]; })).filter(Boolean).join('\n');
+    t = t.replace(/[ \t]+\n/g, '\n').replace(/\n{3,}/g, '\n\n').trim();
+    return t || null;
+  }
+  function wbSpan(id, cells, fallback) {
+    var t = cells.map(function (a) { return wbCell(id, a); }).filter(Boolean).join('\n').replace(/[ \t]+\n/g, '\n').trim();
+    return t ? '<span class="wbt" title="Worksheet wording, City workbook ' + esc(SPECS[id].sheet) + ' ' + cells.join(', ') + '">' + esc(t) + '</span>' : esc(fallback);
+  }
+  /* B.5-4 Line 9 as the City workbook computes it (cell J31): Line 8 / (Line 2[b] x Line 1/12) */
+  function b54wb() { var v = g('B.5-4', 'J31'); return isNum(v) ? v : NaN; }
+  function b54manual() { /* Line 9 as printed in the manual PDF (p. B-60): Line 8 / (Line 2[b] / (Line 1/12)) - shown for comparison only */
     var l8 = g('B.5-4', 'J30'), b = g('B.5-4', 'H22'), p = inVal('B.5-4', SPECS['B.5-4'].lines[0]);
     if (!isNum(l8) || !isNum(b) || !b || !p) return NaN;
     return l8 / (b / (p / 12));
@@ -85,7 +105,7 @@
     INF: { name: 'Worksheet B.5-2 Line 5', short: 'B.5-2', get: function () { return lineVal('B.5-2', 5); } },
     TGT: { name: 'Worksheet B.5-2 Line 10', short: 'B.5-2', get: function () { var v = g('B.5-2', 'F17'); return isNum(v) ? v : 0; } },
     DCV: { name: 'Worksheet B.2-1 Line 6 (DCV)', short: 'B.2-1', get: function () { return +dcvB21().toFixed(1); } },
-    SF54: { name: 'Worksheet B.5-4 Line 9 (manual equation)', short: 'B.5-4', get: function () { var v = b54manual(); return isNum(v) ? +v.toFixed(4) : 0; } },
+    SF54: { name: 'Worksheet B.5-4 Line 9 (City workbook cell J31)', short: 'B.5-4', get: function () { var v = b54wb(); return isNum(v) ? +v.toFixed(4) : 0; } },
     DINF: { name: 'Worksheet B.5-2 Line 5 / 2, converted to ft/hr', short: 'B.5-2', get: function () { return +(lineVal('B.5-2', 5) / 2 / 12).toFixed(5); } },
     B55: { name: 'Table B.5-5 for the Line 9 drawdown', short: 'Table B.5-5', get: function () { var r = tb55(lineVal('B.5-5', 9)); return r ? r[1] : 0; } },
     FP: { name: 'Worksheet B.5-1 Line 23 (provided footprint)', short: 'B.5-1', get: function () { return lineVal('B.5-1', 23); } }
@@ -116,7 +136,7 @@
         { sec: 'Baseline Calculations' },
         { n: 12, t: 'const', cell: 'F18', label: 'Allowable routing time for sizing', unit: 'hours' },
         { n: 13, t: 'calc', cell: 'F19', label: 'Depth filtered during storm', eq: 'L11 × L12', unit: 'inches', d: 2 },
-        { n: 14, t: 'calc', cell: 'F20', label: 'Depth of detention storage', eq: 'L5 + (L6 × L9) + (L7 × L10) + (L8 × L10)', unit: 'inches', d: 2 },
+        { n: 14, t: 'calc', cell: 'F20', label: 'Depth of detention storage', wbx: ['C21'], eq: 'L5 + (L6 × L9) + (L7 × L10) + (L8 × L10)', unit: 'inches', d: 2 },
         { n: 15, t: 'calc', cell: 'F22', label: 'Total depth treated', eq: 'L13 + L14', unit: 'inches', d: 2 },
         { sec: 'Option 1 - Biofilter 1.5 times the DCV' },
         { n: 16, t: 'calc', cell: 'F24', label: 'Required biofiltered volume', eq: '1.5 × L4', unit: 'cu. ft.', d: 2 },
@@ -125,7 +145,7 @@
         { n: 18, t: 'calc', cell: 'F27', label: 'Required storage (surface + pores) volume', eq: '0.75 × L4', unit: 'cu. ft.', d: 2 },
         { n: 19, t: 'calc', cell: 'F28', label: 'Required footprint', eq: '(L18 / L14) × 12', unit: 'sq. ft.', d: 2 },
         { sec: 'Footprint of the BMP' },
-        { n: 20, t: 'in', cell: 'F30', label: 'BMP footprint sizing factor (default 0.03, or an alternative minimum footprint sizing factor from Worksheet B.5-4)', unit: '', def: 0.03, alt: LK.SF54, d: 4 },
+        { n: 20, t: 'in', cell: 'F30', label: 'BMP footprint sizing factor (default 0.03, or an alternative minimum footprint sizing factor from Worksheet B.5-4)', unit: '', def: 0.03, alt: LK.SF54, d: 4, note: 'Reviewer note: the August 2024 Worksheet B.5-4 has no Line 11; its minimum footprint sizing factor for clogging is Line 9 (cell J31). The \"Line 11\" reference is carried over from the pre-2024 worksheet; the manual PDF prints the same wording (p. B-52).' },
         { n: 21, t: 'calc', cell: 'F31', label: 'Minimum BMP footprint', eq: 'L1 × L2 × L20', unit: 'sq. ft.', d: 2 },
         { n: 22, t: 'calc', cell: 'F32', label: 'Footprint of the BMP', eq: 'MAX(MIN(L17, L19), L21)', unit: 'sq. ft.', d: 2 },
         { n: 23, t: 'in', cell: 'F33', label: 'Provided BMP footprint', unit: 'sq. ft.', def: 0 },
@@ -140,8 +160,8 @@
         { n: 5, t: 'in', cell: 'F10', label: 'Measured infiltration rate in the DMA. Mapped soils: enter 0.10 for NRCS Type D and 0.30 for Type C (include a soils map in the SWQMP). No infiltration condition with unknown measured rate: 0.0 if geotechnical and/or groundwater hazards are documented, otherwise 0.05.', unit: 'in/hr.', def: 0, d: 3 },
         { n: 6, t: 'const', cell: 'F11', label: 'Factor of safety', unit: '' },
         { n: 7, t: 'calc', cell: 'F12', label: 'Reliable infiltration rate, for biofiltration BMP sizing', eq: 'L5 / L6', unit: 'in/hr.', d: 4 },
-        { n: 8, t: 'calc', cell: 'F13', label: 'Average annual volume reduction target (Figure B.5-2)', eq: function (v) { return v[7] > 0.01 ? 'MIN(40, 166.9 × L7 + 6.62)' : '3.5 (Line 7 ≤ 0.01 in/hr.)'; }, unit: '%', d: 3 },
-        { n: 9, t: 'calc', cell: 'F15', label: 'Fraction of DCV to be retained (Figure B.5-3)', eq: function (v) { return v[8] > 8 ? 'ROUND(' + POLY('L8') + ', 3)' : '0.023 (Line 8 ≤ 8%)'; }, unit: '', d: 3 },
+        { n: 8, t: 'calc', cell: 'F13', label: 'Average annual volume reduction target (Figure B.5-2)', wbx: ['C14'], eq: function (v) { return v[7] > 0.01 ? 'MIN(40, 166.9 × L7 + 6.62)' : '3.5 (Line 7 ≤ 0.01 in/hr.)'; }, unit: '%', d: 3 },
+        { n: 9, t: 'calc', cell: 'F15', label: 'Fraction of DCV to be retained (Figure B.5-3)', wbx: ['C16'], eq: function (v) { return v[8] > 8 ? 'ROUND(' + POLY('L8') + ', 3)' : '0.023 (Line 8 ≤ 8%)'; }, unit: '', d: 3 },
         { n: 10, t: 'calc', cell: 'F17', label: 'Target volume retention', eq: 'L9 × L4', unit: 'cu. ft.', d: 2 }
       ]),
       result: function () { return { main: [['Target volume retention (Line 10)', g('B.5-2', 'F17'), 'cu. ft.', 2], ['Reliable infiltration (Line 7)', g('B.5-2', 'F12'), 'in/hr.', 4]], info: 'Carried to B.5-3 (comparison), B.5-5 Line 18 and B.5-6 Line 14.' }; }
@@ -170,7 +190,7 @@
         { n: 20, t: 'calc', cell: 'F28', label: 'Infiltration storage fraction of DCV', eq: 'ROUND(L19 / L4, 2)', unit: '', d: 2 },
         { n: 21, t: 'calc', cell: 'F29', label: 'Total equivalent fraction of DCV', eq: 'L18 + L20', unit: '', d: 4 },
         { n: 22, t: 'calc', cell: 'F30', label: 'Biofiltration BMP average annual capture [use Line 21 and Line 17 in Figure B.4-1]', eq: function (v) { return v[17] ? 'Figure B.4-1 capture at fraction L21 and drawdown L17 h, City workbook table, interpolation' : 'L16 (Line 17 = 0: no infiltration storage, so capture = ET capture only, as in the City workbook)'; }, unit: '%', d: 2 },
-        { n: 23, t: 'calc', cell: 'F31', label: 'Fraction of DCV retained (Figure B.5-3)', eq: 'MAX(0, ROUND(' + POLY('L22') + ', 3))', unit: '', d: 3 },
+        { n: 23, t: 'calc', cell: 'F31', label: 'Fraction of DCV retained (Figure B.5-3)', wbx: ['C32'], eq: 'MAX(0, ROUND(' + POLY('L22') + ', 3))', unit: '', d: 3 },
         { n: 24, t: 'calc', cell: 'F33', label: 'Volume retention achieved by biofiltration BMP', eq: 'ROUND(L23 × L4, 0)', unit: 'cu. ft.', d: 0 }
       ]),
       result: function () {
@@ -189,7 +209,7 @@
         { n: 6, t: 'in', cell: 'J27', label: 'Adjustment for pretreatment measures: 0 if no pretreatment; 0.5 if the pretreatment has an active Washington State TAPE approval rating for "pre-treatment"; 0.25 when pretreatment without TAPE certification is included (attach pretreatment calculations when > 0)', unit: '', def: 0, opts: [0, 0.25, 0.5] }
       ],
       extraIn: ['D12', 'D13', 'D14', 'D15', 'D16', 'D17', 'D18', 'D19', 'D20', 'D21', 'F21', 'J21'].map(function (c) { return { cell: c, def: 0 }; }),
-      result: function () { var m = b54manual(); return { main: [['Min. footprint sizing factor (Line 9)', m, '', 4], ['BMP footprint needed (Line 8)', g('B.5-4', 'J30'), 'sq. ft.', 1]], ok: /^Yes/.test(g('B.5-4', 'J23')), okText: 'Line 3: ' + g('B.5-4', 'J23') }; }
+      result: function () { var m = b54wb(); return { main: [['Min. footprint sizing factor (Line 9)', m, '', 4], ['BMP footprint needed (Line 8)', g('B.5-4', 'J30'), 'sq. ft.', 1]], ok: /^Yes/.test(g('B.5-4', 'J23')), okText: 'Line 3: ' + g('B.5-4', 'J23') }; }
     },
     'B.5-5': {
       sheet: 'Worksheet B.5-5', title: 'Optimized Biofiltration BMP Footprint when Downstream of a Storage Unit',
@@ -207,12 +227,12 @@
         { n: 10, t: 'in', cell: 'F15', label: 'Storage required to achieve greater than 92 percent capture (see Table B.5-5)', unit: 'fraction', link: LK.B55, d: 2 },
         { n: 11, t: 'calc', cell: 'F16', label: 'Storage required in cubic feet', eq: 'L4 × L10', unit: 'cu. ft.', d: 1 },
         { n: 12, t: 'in', cell: 'F17', label: 'Storage provided in the design, minimum (from the elevation that bypasses the biofiltration BMP, overflow elevation)', unit: 'cu. ft.', def: 0 },
-        { n: 13, t: 'status', cell: 'D18', label: 'Is Line 12 ≥ Line 11? If no, increase storage provided until this criterion is met', pass: function (v) { return /Met/.test(v); } },
+        { n: 13, t: 'status', cell: 'D18', label: 'Is Line 12 ≥ Line 11? If no, increase storage provided until this criterion is met', note: 'Manual p. B-64 adds: \u201cIf no increase storage provided until this criteria is met\u201d.', pass: function (v) { return /Met/.test(v); } },
         { sec: 'Criteria 1: BMP Footprint Biofiltration Capacity' },
         { n: 14, t: 'in', cell: 'F20', label: 'Peak flow from the storage unit to the biofiltration BMP (using the elevation used to evaluate the percent capture)', unit: 'cfs', def: 0, d: 3 },
         { n: 15, t: 'calc', cell: 'F21', label: 'Required biofiltration footprint', eq: 'ROUND((3,600 × L14) / L7, 0)', unit: 'sq. ft.', d: 0 },
         { sec: 'Criteria 2: Alternative Minimum Sizing Factor (Clogging)' },
-        { n: 16, t: 'in', cell: 'F23', label: 'Alternative minimum footprint sizing factor [Line 9 of the 2024 Worksheet B.5-4; the worksheet text still cites "Line 11", the pre-2024 line number]', unit: 'fraction', link: LK.SF54, d: 4 },
+        { n: 16, t: 'in', cell: 'F23', label: 'Alternative minimum footprint sizing factor [Line 9 of the 2024 Worksheet B.5-4; the worksheet text still cites "Line 11", the pre-2024 line number]', unit: 'fraction', link: LK.SF54, d: 4, note: 'Reviewer note: the August 2024 Worksheet B.5-4 has no Line 11; its minimum footprint sizing factor for clogging is Line 9 (cell J31). The \"Line 11\" reference is carried over from the pre-2024 worksheet; the manual PDF prints the same wording (p. B-64).' },
         { n: 17, t: 'calc', cell: 'F24', label: 'Required biofiltration footprint', eq: 'ROUND(L3 × L16, 0)', unit: 'sq. ft.', d: 0 },
         { sec: 'Criteria 3: Retention requirement [Not applicable for No Infiltration Condition]' },
         { n: 18, t: 'in', cell: 'F26', label: 'Retention target (Line 10 in Worksheet B.5-2)', unit: 'cu. ft.', link: LK.TGT, d: 2 },
@@ -388,7 +408,12 @@
       extra = '<code class="bs-eq">= ' + esc(e) + (/L\d/.test(e) ? '<br>= ' + esc(subst(e, v, spec)) : '') + '</code>';
     }
     var dim = L.after12 && /Met/.test(g('B.5-6', 'E21'));
-    return '<div class="bs-row t-' + L.t + (dim ? ' dim' : '') + '" data-line="' + L.n + '"><span class="bs-ln">' + (L.n || '-') + '</span><div class="bs-lbl"><span>' + esc(L.label) + '</span>' + extra + '</div><div class="bs-val">' + field + '</div><span class="bs-unit">' + esc(L.unit || '') + '</span></div>';
+    return '<div class="bs-row t-' + L.t + (dim ? ' dim' : '') + '" data-line="' + L.n + '"><span class="bs-ln">' + (L.n || '-') + '</span><div class="bs-lbl">' + lblHtml(id, L) + extra + '</div><div class="bs-val">' + field + '</div><span class="bs-unit">' + esc(L.unit || '') + '</span></div>';
+  }
+  function lblHtml(id, L) {
+    var wt = wbText(id, L);
+    return (wt ? '<span class="wbt" title="Worksheet wording, City workbook ' + esc(SPECS[id].sheet) + ' row ' + coln(L.cell)[1] + '">' + esc(wt) + '</span>' : '<span>' + esc(L.label) + '</span>') +
+      (L.note ? '<span class="bs-rnote">' + esc(L.note) + '</span>' : '');
   }
   function sheetHead(t, sub) {
     return '<header class="bs-sheet-head"><div><span class="eyebrow-label">' + esc(t.code) + '</span><h2>' + esc(t.title) + '</h2>' + (sub ? '<p>' + sub + '</p>' : '') + '</div>' +
@@ -412,7 +437,7 @@
   }
   function renderSpec(id) {
     var spec = SPECS[id], v = vals(id), t = TAB[id], h = '';
-    h += sheetHead(t, 'Outlined fields are inputs; values tagged <i>from …</i> are carried from another worksheet (type over them to override). Calculations use the City workbook formulas, ' + esc(XLS) + '.');
+    h += sheetHead(t, 'Outlined fields are inputs; values tagged <i>from …</i> are carried from another worksheet (type over them to override). Line wording and calculations follow the ' + esc(XLS) + ' (hover a line for its workbook row); reviewer notes are labelled.');
     h += '<div class="bs-rows">';
     if (spec.custom === 'b54') h += b54Body();
     else spec.lines.forEach(function (L) {
@@ -441,15 +466,15 @@
     }
     h += '<tr class="tot"><th>Line 2 - Drainage area totals</th><td>[a] ' + fmt(g(id, 'E22'), 0) + '</td><td>N/A</td><td>[b] ' + fmt(g(id, 'H22'), 1) + '</td><td>100%</td><td>N/A</td><td>[c] ' + fmt(g(id, 'L22'), 2) + '</td></tr></tbody></table></div>';
     var ok3 = /^Yes/.test(String(g(id, 'J23')));
-    h += '<div class="bs-row t-status"><span class="bs-ln">3</span><div class="bs-lbl"><span>Does Line 2[a] equal the area of the DMA(s) draining to the BMP in Worksheet B-1? If "No", revise inputs above until the answer is "Yes".</span><span class="bs-stat-txt">Line 2[a] = ' + fmt(g(id, 'E22'), 0) + ' sq. ft.; B-1 total = ' + fmt(inVal(id, L[1]), 0) + ' sq. ft.</span></div><div class="bs-val"><span class="bs-badge big ' + (ok3 ? 'yes' : 'no') + '">' + ico(ok3 ? 'ok' : 'no') + (ok3 ? 'YES' : 'NO') + '</span></div><span class="bs-unit"></span></div>';
-    h += '<div class="bs-sec">Sizing Factor for Clogging</div>';
+    h += '<div class="bs-row t-status"><span class="bs-ln">3</span><div class="bs-lbl">' + wbSpan(id, ['C23'], 'Does Line 2[a] equal the area of the DMA(s) draining to the BMP in Worksheet B-1?') + '<span class="bs-stat-txt">Line 2[a] = ' + fmt(g(id, 'E22'), 0) + ' sq. ft.; B-1 total = ' + fmt(inVal(id, L[1]), 0) + ' sq. ft.</span></div><div class="bs-val"><span class="bs-badge big ' + (ok3 ? 'yes' : 'no') + '">' + ico(ok3 ? 'ok' : 'no') + (ok3 ? 'YES' : 'NO') + '</span></div><span class="bs-unit"></span></div>';
+    h += '<div class="bs-sec">' + esc(wbCell(id, 'B24') || 'Sizing Factor for Clogging') + '</div>';
     h += rowHtml(id, L[2], v, spec) + rowHtml(id, L[3], v, spec) + rowHtml(id, L[4], v, spec);
-    var c = function (n, lbl, val, e, sub, unit, d) { return '<div class="bs-row t-calc" data-line="' + n + '"><span class="bs-ln">' + n + '</span><div class="bs-lbl"><span>' + lbl + '</span><code class="bs-eq">= ' + e + '<br>= ' + sub + '</code></div><div class="bs-val"><strong>' + fmt(val, d) + '</strong></div><span class="bs-unit">' + unit + '</span></div>'; };
+    var c = function (n, lbl, val, e, sub, unit, d) { return '<div class="bs-row t-calc" data-line="' + n + '"><span class="bs-ln">' + n + '</span><div class="bs-lbl">' + lbl + '<code class="bs-eq">= ' + e + '<br>= ' + sub + '</code></div><div class="bs-val"><strong>' + fmt(val, d) + '</strong></div><span class="bs-unit">' + unit + '</span></div>'; };
     var b = g(id, 'H22'), cc = g(id, 'L22'), l6 = inVal(id, L[4]), l7 = g(id, 'J28'), l8 = g(id, 'J30'), p = inVal(id, L[0]);
-    h += c(7, 'Calculate the average annual TSS load', l7, '(L2[b] × 62.4 × L2[c] × (1 − L6)) / 10⁶', '(' + fmt(b, 1) + ' × 62.4 × ' + fmt(cc, 2) + ' × (1 − ' + l6 + ')) / 1,000,000', 'lb/yr', 3);
-    h += c(8, 'Calculate the BMP footprint needed', l8, '(L7 × L5) / L4', '(' + fmt(l7, 3) + ' × ' + fmt(inVal(id, L[3])) + ') / ' + fmt(inVal(id, L[2])), 'sq. ft.', 2);
-    h += c(9, 'Calculate the minimum footprint sizing factor for clogging', b54manual(), 'L8 / (L2[b] / (L1 / 12))', fmt(l8, 2) + ' / (' + fmt(b, 1) + ' / (' + fmt(p, 2) + ' / 12))', '', 4);
-    h += '<div class="bs-flag"><b>Line 9: manual vs. City workbook.</b> The manual (p. B-60) prints Line 9 = Line 8 / (Line 2[b] / (Line 1/12)), i.e. footprint ÷ Σ(area × runoff factor). City workbook cell J31 computes Line 8 / (Line 2[b] × Line 1/12), which matches only when Line 1 = 12 in. This tool reports the manual equation. Workbook J31 for these inputs: <b>' + fmt(g(id, 'J31'), 4) + '</b>.</div>';
+    h += c(7, wbSpan(id, ['C28', 'C29'], 'Calculate the average annual TSS load'), l7, '(L2[b] × 62.4 × L2[c] × (1 − L6)) / 10⁶', '(' + fmt(b, 1) + ' × 62.4 × ' + fmt(cc, 2) + ' × (1 − ' + l6 + ')) / 1,000,000', 'lb/yr', 3);
+    h += c(8, wbSpan(id, ['C30'], 'Calculate the BMP footprint needed'), l8, '(L7 × L5) / L4', '(' + fmt(l7, 3) + ' × ' + fmt(inVal(id, L[3])) + ') / ' + fmt(inVal(id, L[2])), 'sq. ft.', 2);
+    h += c(9, wbSpan(id, ['C31', 'C32'], 'Calculate the minimum footprint sizing factor for clogging'), b54wb(), 'L8 / (L2[b] × L1 / 12)', fmt(l8, 2) + ' / (' + fmt(b, 1) + ' × ' + fmt(p, 2) + ' / 12)', '', 4);
+    h += '<div class="bs-flag" id="b54flag"><b>Line 9: City workbook vs. manual PDF.</b> This tool follows the City workbook (cell J31 and its printed line text): Line 9 = Line 8 / (Line 2[b] × Line 1/12). The manual PDF (Worksheet B.5-4, p. B-60) prints Line 9 = Line 8 / (Line 2[b] / (Line 1/12)), i.e. footprint ÷ Σ(area × runoff factor); the two agree only when Line 1 = 12 in. Manual-equation value for these inputs: <b>' + fmt(b54manual(), 4) + '</b>. Confirm with the City which form governs before relying on Line 9 where Line 1 ≠ 12 in.</div>';
     return h;
   }
   /* B.5-6 tables */
@@ -457,17 +482,17 @@
   function b56Land() {
     var w = wsInputs('B.5-6'), inp = function (c) { return '<input type="number" step="any" data-cell="' + c + '" value="' + esc(w[c] !== undefined ? w[c] : '') + '" placeholder="0">'; };
     var h = '<div class="bs-sec">Landscape Area (must be identified on DS-3247)</div><div class="bs-tbl-wrap"><table class="bs-tbl"><thead><tr><th>Line</th><th>Identification</th>' + B56C.map(function (c, i) { return '<th>' + (i + 1) + '</th>'; }).join('') + '</tr></thead><tbody>';
-    h += '<tr><td>6</td><th>Landscape area that meets the requirements in SD-B and SD-F (sq. ft.)</th>' + B56C.map(function (c) { return '<td>' + inp(c + '12') + '</td>'; }).join('') + '</tr>';
-    h += '<tr><td>7</td><th>Impervious area draining to the landscape area (sq. ft.)</th>' + B56C.map(function (c) { return '<td>' + inp(c + '13') + '</td>'; }).join('') + '</tr>';
-    h += '<tr><td>8</td><th>Impervious to pervious area ratio [Line 7 / Line 6]</th>' + B56C.map(function (c) { return '<td>' + fmt(g('B.5-6', c + '14'), 2) + '</td>'; }).join('') + '</tr>';
-    h += '<tr><td>9</td><th>Effective credit area [if Line 8 > 1.5, Line 6; otherwise Line 7 / 1.5]</th>' + B56C.map(function (c) { return '<td><b>' + fmt(g('B.5-6', c + '16'), 0) + '</b></td>'; }).join('') + '</tr></tbody></table></div>';
+    h += '<tr><td>6</td><th>' + wbSpan('B.5-6', ['C12'], 'Landscape area that meets the requirements in SD-B and SD-F (sq. ft.)') + '</th>' + B56C.map(function (c) { return '<td>' + inp(c + '12') + '</td>'; }).join('') + '</tr>';
+    h += '<tr><td>7</td><th>' + wbSpan('B.5-6', ['C13'], 'Impervious area draining to the landscape area (sq. ft.)') + '</th>' + B56C.map(function (c) { return '<td>' + inp(c + '13') + '</td>'; }).join('') + '</tr>';
+    h += '<tr><td>8</td><th>' + wbSpan('B.5-6', ['C14', 'C15'], 'Impervious to pervious area ratio [Line 7 / Line 6]') + '</th>' + B56C.map(function (c) { return '<td>' + fmt(g('B.5-6', c + '14'), 2) + '</td>'; }).join('') + '</tr>';
+    h += '<tr><td>9</td><th>' + wbSpan('B.5-6', ['C16', 'C17'], 'Effective credit area [if Line 8 > 1.5, Line 6; otherwise Line 7 / 1.5]') + '</th>' + B56C.map(function (c) { return '<td><b>' + fmt(g('B.5-6', c + '16'), 0) + '</b></td>'; }).join('') + '</tr></tbody></table></div>';
     return h;
   }
   function b56SD() {
     var w = wsInputs('B.5-6'), dim = /Met/.test(g('B.5-6', 'E21')) ? ' dim' : '';
     var h = '<div class="bs-sec' + dim + '">Line 16: Site design BMPs (document how each credit is calculated in the PDP SWQMP)</div><div class="bs-tbl-wrap' + dim + '"><table class="bs-tbl"><thead><tr><th>ID</th><th>Site design type</th><th>Credit (cu. ft.)</th></tr></thead><tbody>';
     for (var r = 27; r <= 31; r++) h += '<tr><td>' + (r - 26) + '</td><td><input type="text" class="txt" data-text="D' + r + '" value="' + esc(w['D' + r] || '') + '" placeholder="e.g. trees, rain barrels"></td><td><input type="number" step="any" data-cell="I' + r + '" value="' + esc(w['I' + r] !== undefined ? w['I' + r] : '') + '" placeholder="0"></td></tr>';
-    h += '<tr class="tot"><td>16</td><th>Sum of volume retention benefits from other site design BMPs</th><td>' + fmt(g('B.5-6', 'I32'), 2) + '</td></tr></tbody></table></div>';
+    h += '<tr class="tot"><td>16</td><th>' + wbSpan('B.5-6', ['C32'], 'Sum of volume retention benefits from other site design BMPs') + '</th><td>' + fmt(g('B.5-6', 'I32'), 2) + '</td></tr></tbody></table></div>';
     if (dim) h += '<p class="assume">Lines 13-17 apply only when Line 12 is "No"; they are greyed out because Line 11 ≥ Line 4.</p>';
     return h;
   }
@@ -586,7 +611,7 @@
   var FIXES = {
     'B.5-2': ['Factor of safety fixed at 2 as printed on the worksheet.', 'Line 4 is Line 1 × Line 2 × (Line 3/12) as printed (tree and rain-barrel credits are not deducted here).'],
     'B.5-3': ['When the reliable infiltration rate (Line 12) is 0, Line 22 equals the ET capture (Line 16), as in the City workbook.', 'Line 15 and Line 20 rounded to 2 decimals and Line 17 to whole hours, as in the workbook; lookups valid at the 120-hour and fraction-3 table edges.', 'Porosity (Line 9) and factor of safety (Line 11) fixed at 0.4 and 2 as printed.'],
-    'B.5-4': ['2024 worksheet structure (land-use table, Lines 1-9) instead of the pre-2024 Lines 1-11.', 'Line 9 per the manual equation; City workbook J31 shown for comparison.'],
+    'B.5-4': ['2024 worksheet structure (land-use table, Lines 1-9) instead of the pre-2024 Lines 1-11.', 'Line 9 as the City workbook computes it (cell J31); the manual PDF equation (p. B-60) is shown in a flag for comparison.'],
     'B.5-5': ['Line 4 (remaining DCV after retention BMPs) is an input, defaulting to the B.2-1 DCV.', 'Line 6 minimum is 1.5 feet, as printed.'],
     'B.5-7': ['Dispersion credit (Line 14) from the workbook tables: fraction capped at the nomograph maximum, rounded to 3 decimals.', 'Line 6, Line 13 and Line 15 equations as printed on the 2024 worksheet.']
   };
@@ -618,7 +643,7 @@
       out.push('Line 4  Lc = ' + fmt(inVal(id, L5[2])) + ' lb/sq. ft.;  Line 5  TL = ' + fmt(inVal(id, L5[3])) + ' yr;  Line 6  pretreatment = ' + inVal(id, L5[4]));
       out.push('Line 7  TSS load = (L2[b] × 62.4 × L2[c] × (1 − L6)) / 10^6 = ' + fmt(g(id, 'J28'), 3) + ' lb/yr');
       out.push('Line 8  Footprint needed = (L7 × L5) / L4 = ' + fmt(g(id, 'J30'), 2) + ' sq. ft.');
-      out.push('Line 9  Min. footprint sizing factor = L8 / (L2[b] / (L1/12)) = ' + fmt(b54manual(), 4) + '   [City workbook cell J31 = ' + fmt(g(id, 'J31'), 4) + ']');
+      out.push('Line 9  Min. footprint sizing factor = L8 / (L2[b] x L1/12) = ' + fmt(b54wb(), 4) + '   [City workbook J31; manual PDF p. B-60 equation L8 / (L2[b] / (L1/12)) = ' + fmt(b54manual(), 4) + ']');
     } else if (id === 'B-1') {
       S.dmas.forEach(function (d) { out.push(d.id + ': A = ' + fmt(num(d.area), 4) + ' ac, impervious ' + fmt(num(d.imp), 4) + ' ac, HSG ' + (d.hsg || '-') + ', C = ' + fmt(num(d.c), 4) + ', DCV = ' + fmt(3630 * num(d.c) * num(S.d) * num(d.area), 1) + ' cu. ft., treated by ' + (d.bmp || '-') + ' (' + d.type + '), drains to ' + (d.poc || '-')); });
       out.push('Tributary to ' + S.bmp + ': ' + fmt(trib().ac, 4) + ' ac (' + fmt(trib().sf, 0) + ' sq. ft.), C = ' + fmt(trib().c, 4));
@@ -645,7 +670,7 @@
     if (id === 'B.5-5' && !linkedNo(id, 'F15')) out.push('Reviewer assumption: Line 10 taken from Table B.5-5 at the next longer tabulated drawdown when Line 9 falls between table values.');
     out.push('');
     if (t.doc) out.push('Reference: ' + cite(t) + '.');
-    if (SPECS[id]) out.push('Calculation logic: ' + XLS + ', tab "' + SPECS[id].sheet + '"' + (id === 'B.5-4' ? ' (Line 9 per the manual equation)' : '') + '.');
+    if (SPECS[id]) out.push('Calculation logic: ' + XLS + ', tab "' + SPECS[id].sheet + '"' + (id === 'B.5-4' ? ' (Line 9 = cell J31; manual PDF equation shown for comparison)' : '') + '.');
     if (BF1_AT[id] && window.BF1) { if (!S.bf1) S.bf1 = {}; out.push(''); out.push(window.BF1.text(bf1Data(id), S.bf1)); }
     out.push('Prepared with an independent reviewer tool; not an official City of San Diego product. Verify against the source documents.');
     return out.join('\n');
@@ -764,8 +789,8 @@
       '<p><strong>Not an official City of San Diego product.</strong> Independent reviewer aid; no City logos or forms are reproduced. Confirm the current edition on sandiego.gov before relying on a result.</p>' +
       '<h3>Sources</h3><ul><li>' + MAN + ', Appendix B (Worksheets B-1, B.2-1, B.5-1 to B.5-7; Tables B.1-1, B.2-1, B.5-5; Figures B.4-1, B.5-2, B.5-3, B.5-5 to B.5-11), <a href="' + SWS_URL + '" target="_blank" rel="noopener">City PDF</a>.</li>' +
       '<li>Stormwater Standards Appendix I, Form I-10 / Worksheet I-10.A (August 2024 Edition).</li>' +
-      '<li>' + XLS + ', <a href="' + esc(WBD.source) + '" target="_blank" rel="noopener">City file</a> (MD5 ' + esc(WBD.md5) + '). Its formulas, constants and nomograph lookup tables are evaluated directly by this page; the test suite recalculates the same workbook in LibreOffice and checks that every formula cell matches.</li></ul>' +
-      '<h3>Where the manual and the City workbook differ</h3><ul><li><b>B.5-4 Line 9.</b> Manual: Line 8 / (Line 2[b] / (Line 1/12)). Workbook J31: Line 8 / (Line 2[b] × Line 1/12). The tool uses the manual equation and shows J31 beside it.</li>' +
+      '<li>' + XLS + ', <a href="' + esc(WBD.source) + '" target="_blank" rel="noopener">City file</a> (MD5 ' + esc(WBD.md5) + '). This is the calculator\'s reference: its formulas, constants, nomograph lookup tables and line wording are used directly by this page (verified identical to the copy supplied for review on 24 Oct 2026, and to the file on sandiego.gov). Where the workbook and the manual PDF differ, the workbook governs and a flag cites the manual page. The test suite recalculates the same workbook in LibreOffice and checks that every formula cell matches.</li></ul>' +
+      '<h3>Where the manual and the City workbook differ</h3><ul><li><b>B.5-4 Line 9.</b> Manual: Line 8 / (Line 2[b] / (Line 1/12)). Workbook J31 (and its printed line text): Line 8 / (Line 2[b] × Line 1/12). The tool follows the workbook and shows the manual-equation value in a flag; they agree only when Line 1 = 12 in.</li>' +
       '<li><b>Line references.</b> Worksheets B.5-1 (Line 20) and B.5-5 (Line 16) still cite "Line 11 of Worksheet B.5-4", the pre-2024 line number; the 2024 B.5-4 result is Line 9.</li>' +
       '<li><b>B.5-5 Criteria 3</b> is "not applicable for No Infiltration Condition" in the manual, but the workbook still computes Line 21 when Line 5 = 0; Line 22 is shown as the workbook computes it, with a flag.</li></ul>' +
       '<h3>Reviewer assumptions (labelled where used)</h3><ul><li>Table B.5-5: drawdowns between tabulated values use the next longer tabulated drawdown.</li><li>B.5-3: Line 24 is compared with the B.5-2 Line 10 target.</li><li>The January 2018 sizing/feasibility worksheets PDF is not used; it predates the August 2024 changes to Worksheets B.5-2 and B.5-4.</li></ul>';
@@ -774,7 +799,7 @@
 
   var h0 = decodeURIComponent(location.hash.slice(1)); if (TAB[h0]) S.tab = h0;
   render();
-  window.BMPSizing = { state: function () { return S; }, set: function (s) { S = s; render(); }, defaults: defaults, render: render, go: go, calcText: calcText, g: function (id, c) { cache = {}; return g(id, c); }, b54manual: function () { cache = {}; return b54manual(); }, rcCalc: rcCalc, i10: i10, trib: trib, dcv: dcvB21,
+  window.BMPSizing = { state: function () { return S; }, set: function (s) { S = s; render(); }, defaults: defaults, render: render, go: go, calcText: calcText, g: function (id, c) { cache = {}; return g(id, c); }, b54manual: function () { cache = {}; return b54manual(); }, b54wb: function () { cache = {}; return b54wb(); }, wbText: function (id, n) { var L = SPECS[id].lines.filter(function (x) { return x.n === n; })[0]; return L ? wbText(id, L) : null; }, rcCalc: rcCalc, i10: i10, trib: trib, dcv: dcvB21,
     /* test hook: the input cells this page feeds the City workbook formulas, and every formula result */
     dump: function (id) { cache = {}; var sh = evalSheet(id), cells = WBD.sheets[SPECS[id].sheet].cells, out = {}; Object.keys(cells).forEach(function (a) { if (cells[a].f) { var v = sh.get(a); out[a] = E.isErr(v) ? v.err : v; } }); return { sheet: SPECS[id].sheet, inputs: sh.inputs, out: out }; } };
 })();

@@ -60,6 +60,9 @@ button,input,select,textarea{font:inherit}
 .t-status .bs-ln{background:#dff3ea;color:#15803d}
 .bs-lbl{min-width:0;font-size:13.5px;line-height:1.45}
 .bs-lbl>span:first-child{display:block}
+.wbt{white-space:pre-line}
+.bs-tbl th .wbt{font-weight:inherit}
+.bs-rnote{display:block;margin-top:5px;font-size:12px;line-height:1.45;color:#475569;background:#f1f5f9;border-left:3px solid #64748b;padding:3px 8px;border-radius:3px}
 .bs-eq{display:block;margin-top:5px;font:12px/1.55 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:#0b5c6b;background:#f1f8f8;border-left:3px solid var(--aqua);padding:4px 8px;border-radius:3px;white-space:normal;overflow-wrap:anywhere}
 .bs-eq.big{margin:0 22px 22px;font-size:14px}
 .bs-val{text-align:right}

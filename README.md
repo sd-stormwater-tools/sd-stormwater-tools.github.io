@@ -37,6 +37,7 @@ A static GitHub Pages site (no server, no build step, no API keys) that collects
 └── bmp-sizing/
     ├── index.html, app.js, app.css, README.md
     ├── engine.js           small spreadsheet-formula evaluator (IF, ROUND, INDEX/MATCH, VLOOKUP, ...)
+    ├── section.js, section.css  live, animated BF-1 biofiltration section (B.5-1, B.5-2, B.5-3)
     └── data/b5-workbook.js generated from the City Appendix B.5 Excel workbook (formulas, constants, lookup tables)
 ```
 `site.js` works out the site root from its own URL, so links work at any folder depth and under a project URL like `https://<user>.github.io/<repo>/`.

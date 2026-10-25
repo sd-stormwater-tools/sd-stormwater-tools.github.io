@@ -394,6 +394,22 @@
     return '<header class="bs-sheet-head"><div><span class="eyebrow-label">' + esc(t.code) + '</span><h2>' + esc(t.title) + '</h2>' + (sub ? '<p>' + sub + '</p>' : '') + '</div>' +
       (t.doc ? '<a class="bs-src" href="' + pageLink(t.doc, t.page) + '" title="Open the original page in the Manual &amp; Code Reference">' + thumb(t.doc, t.page, 64) + '<span>Original page<br><b>' + (t.doc === 'appi' ? 'App. I p. ' + t.page : 'p. ' + t.printed) + '</b></span></a>' : '') + '</header>';
   }
+  /* ---------- BF-1 live section (section.js) on B.5-1, B.5-2 and B.5-3 ---------- */
+  var BF1_AT = { 'B.5-1': 'Baseline Calculations', 'B.5-2': 'end', 'B.5-3': 'Evapotranspiration: Average Annual Volume Retention' };
+  function bf1Data(id) {
+    var b1 = function (n) { return lineVal('B.5-1', n); }, req = g('B.5-1', 'F32');
+    var d = { tab: id, P: { v: b1(5), src: 'B.5-1 Line 5' }, A7: { v: b1(7), src: 'B.5-1 Line 7' }, REQ: { v: isNum(req) ? req : 0, src: 'B.5-1 Line 22' } };
+    if (id === 'B.5-3') { d.M = { v: lineVal('B.5-3', 6), src: 'B.5-3 Line 6' }; d.A8 = { v: lineVal('B.5-3', 8), src: 'B.5-3 Line 8' }; d.FP = { v: lineVal('B.5-3', 5), src: 'B.5-3 Line 5' }; d.INF = { v: lineVal('B.5-3', 10), src: 'B.5-3 Line 10' }; }
+    else { d.M = { v: b1(6), src: 'B.5-1 Line 6' }; d.A8 = { v: b1(8), src: 'B.5-1 Line 8' }; d.FP = { v: b1(23), src: 'B.5-1 Line 23' }; d.INF = { v: lineVal('B.5-2', 5), src: 'B.5-2 Line 5' }; }
+    return d;
+  }
+  function bf1Mount(id) {
+    if (!window.BF1) return;
+    var slot = BF1_AT[id] && $('bf1slot');
+    if (!slot) { window.BF1.detach(); return; }
+    if (!S.bf1) S.bf1 = {};
+    window.BF1.attach(slot, bf1Data(id), { store: S.bf1, save: save, link: pageLink, thumb: thumb, onChange: function () { var ta = $('calcText'); if (ta) ta.value = calcText(S.tab); } });
+  }
   function renderSpec(id) {
     var spec = SPECS[id], v = vals(id), t = TAB[id], h = '';
     h += sheetHead(t, 'Outlined fields are inputs; values tagged <i>from …</i> are carried from another worksheet (type over them to override). Calculations use the City workbook formulas, ' + esc(XLS) + '.');
@@ -402,8 +418,9 @@
     else spec.lines.forEach(function (L) {
       if (L.tbl === 'land') h += b56Land();
       else if (L.tbl === 'sd') h += b56SD();
-      else h += rowHtml(id, L, v, spec);
+      else { if (L.sec && BF1_AT[id] === L.sec) h += '<div id="bf1slot"></div>'; h += rowHtml(id, L, v, spec); }
     });
+    if (BF1_AT[id] === 'end') h += '<div id="bf1slot"></div>';
     h += '</div>';
     if (id === 'B.5-5') h += tb55Html();
     if (id === 'B.5-5' && !num(lineVal('B.5-5', 5))) h += '<div class="bs-flag"><b>No infiltration condition.</b> The manual marks Criteria 3 (Lines 18-21) "Not applicable for No Infiltration Condition"; the City workbook still computes Line 21 when Line 5 = 0, and Line 22 is shown as the workbook computes it. Line 21 = ' + fmt(g('B.5-5', 'F29'), 0) + ' sq. ft.</div>';
@@ -629,6 +646,7 @@
     out.push('');
     if (t.doc) out.push('Reference: ' + cite(t) + '.');
     if (SPECS[id]) out.push('Calculation logic: ' + XLS + ', tab "' + SPECS[id].sheet + '"' + (id === 'B.5-4' ? ' (Line 9 per the manual equation)' : '') + '.');
+    if (BF1_AT[id] && window.BF1) { if (!S.bf1) S.bf1 = {}; out.push(''); out.push(window.BF1.text(bf1Data(id), S.bf1)); }
     out.push('Prepared with an independent reviewer tool; not an official City of San Diego product. Verify against the source documents.');
     return out.join('\n');
   }
@@ -668,6 +686,7 @@
     else if (id === 'B.2-1') h = renderB21();
     else h = renderI10();
     $('sheet').innerHTML = h;
+    bf1Mount(id);
     renderSide(id);
     if (key) { var el = $('sheet').querySelector(key); if (el) { el.focus(); try { if (pos != null) el.setSelectionRange(pos, pos); } catch (e) { /* number inputs have no selection */ } } }
     save();

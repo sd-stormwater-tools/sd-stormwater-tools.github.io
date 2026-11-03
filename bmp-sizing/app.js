@@ -24,7 +24,7 @@
     if (d == null) d = Math.abs(x) >= 100 ? 2 : Math.abs(x) >= 1 ? 3 : 4;
     return x.toLocaleString('en-US', { maximumFractionDigits: d });
   }
-  function num(v) { var n = parseFloat(v); return isFinite(n) ? n : 0; }
+  function num(v) { var n = parseFloat(typeof v === 'string' ? v.replace(/[,\s]/g, '') : v); return isFinite(n) ? n : 0; }
 
   /* ---------------- state ---------------- */
   function defaults() {
@@ -362,7 +362,7 @@
       var touched = S.tab === t.id || (S.w[t.id] && Object.keys(S.w[t.id]).length) || (t.id === 'I-10.A' && num(S.i10.cap));
       var st = touched ? status(t.id) : null, b = st === null ? '' : '<span class="bs-badge ' + (st ? 'yes' : 'no') + '">' + (st ? 'YES' : 'NO') + '</span>';
       return '<button type="button" role="tab" class="bs-tab" data-tab="' + t.id + '" aria-selected="' + (S.tab === t.id) + '">' +
-        '<span class="bs-tab-ico">' + ico(t.ico) + '</span><span class="bs-tab-txt"><b>' + esc(t.code) + '</b><small>' + esc(t.title) + '</small></span>' + b + '</button>';
+        '<span class="bs-tab-ico">' + ico(t.ico) + '</span><span class="bs-tab-txt" title="' + esc(t.code + ' - ' + t.title) + '"><b>' + esc(t.code).replace(/^Worksheet /, '<span class="pre">Worksheet </span>') + '</b><small>' + esc(t.title) + '</small></span>' + b + '</button>';
     }).join('');
   }
   function renderCarried() {
@@ -392,7 +392,7 @@
       val = inVal(id, L);
       var lk = linked(id, L);
       if (L.opts) field = '<select data-cell="' + L.cell + '">' + L.opts.map(function (o) { return '<option' + (+val === o ? ' selected' : '') + '>' + o + '</option>'; }).join('') + '</select>';
-      else field = '<input type="number" step="any" inputmode="decimal" data-cell="' + L.cell + '" value="' + esc(lk ? (isNum(val) ? +val.toFixed(L.d != null ? L.d + 2 : 6) : '') : (w[L.cell] !== undefined ? w[L.cell] : val)) + '"' + (lk ? ' class="is-linked"' : '') + '>';
+      else field = '<input type="text" inputmode="decimal" autocomplete="off" spellcheck="false" data-cell="' + L.cell + '" value="' + esc(lk ? (isNum(val) ? +val.toFixed(L.d != null ? L.d + 2 : 6) : '') : (w[L.cell] !== undefined ? w[L.cell] : val)) + '"' + (lk ? ' class="is-linked"' : '') + '>';
       if (L.link) extra = lk ? '<span class="bs-chip link" title="' + esc(L.link.name) + '">from ' + esc(L.link.short) + '</span>' : '<button type="button" class="bs-chip relink" data-relink="' + L.cell + '" title="Use ' + esc(L.link.name) + '">↺ use ' + esc(L.link.short) + ' (' + fmt(L.link.get(), L.d != null ? L.d : null) + ')</button>';
       if (L.alt) extra += '<button type="button" class="bs-chip relink" data-alt="' + L.cell + '" title="Use ' + esc(L.alt.name) + '">use ' + esc(L.alt.short) + ' (' + fmt(L.alt.get(), L.d != null ? L.d : null) + ')</button>';
       var wm = L.warn && L.warn(num(val)); if (wm) extra += '<span class="bs-warn">' + esc(wm) + '</span>';
@@ -459,7 +459,7 @@
     h += rowHtml(id, L[1], v, spec);
     h += rowHtml(id, L[0], v, spec);
     h += '<div class="bs-sec">Volume Weighted EMC Calculation</div><div class="bs-tbl-wrap"><table class="bs-tbl b54"><thead><tr><th>Land use</th><th>A<small>Area draining to BMP (sq. ft.)</small></th><th>B<small>Runoff factor</small></th><th>C<small>Annual runoff (cu. ft.) A × B × Line 1 / 12</small></th><th>D<small>% of annual runoff C / Line 2[b]</small></th><th>E<small>TSS EMC (mg/L)</small></th><th>F<small>Volume weighted EMC D × E</small></th></tr></thead><tbody>';
-    var inp = function (c) { return '<input type="number" step="any" data-cell="' + c + '" value="' + esc(w[c] !== undefined ? w[c] : '') + '" placeholder="0">'; };
+    var inp = function (c) { return '<input type="text" inputmode="decimal" autocomplete="off" spellcheck="false" data-cell="' + c + '" value="' + esc(w[c] !== undefined ? w[c] : '') + '" placeholder="0">'; };
     for (var r = 12; r <= 21; r++) {
       var other = r === 21, nm = other ? '<input type="text" class="txt" data-text="B21" placeholder="Other, specify" value="' + esc(w.B21 || '') + '">' : LU[r - 12];
       h += '<tr><th>' + nm + '</th><td>' + inp('D' + r) + '</td><td>' + (other ? inp('F21') : fmt(g(id, 'F' + r), 2)) + '</td><td>' + fmt(g(id, 'G' + r), 1) + '</td><td>' + pct(g(id, 'I' + r)) + '</td><td>' + (other ? inp('J21') : fmt(g(id, 'J' + r), 0)) + '</td><td>' + fmt(g(id, 'K' + r), 2) + '</td></tr>';
@@ -480,7 +480,7 @@
   /* B.5-6 tables */
   var B56C = ['E', 'F', 'H', 'K', 'L'];
   function b56Land() {
-    var w = wsInputs('B.5-6'), inp = function (c) { return '<input type="number" step="any" data-cell="' + c + '" value="' + esc(w[c] !== undefined ? w[c] : '') + '" placeholder="0">'; };
+    var w = wsInputs('B.5-6'), inp = function (c) { return '<input type="text" inputmode="decimal" autocomplete="off" spellcheck="false" data-cell="' + c + '" value="' + esc(w[c] !== undefined ? w[c] : '') + '" placeholder="0">'; };
     var h = '<div class="bs-sec">Landscape Area (must be identified on DS-3247)</div><div class="bs-tbl-wrap"><table class="bs-tbl"><thead><tr><th>Line</th><th>Identification</th>' + B56C.map(function (c, i) { return '<th>' + (i + 1) + '</th>'; }).join('') + '</tr></thead><tbody>';
     h += '<tr><td>6</td><th>' + wbSpan('B.5-6', ['C12'], 'Landscape area that meets the requirements in SD-B and SD-F (sq. ft.)') + '</th>' + B56C.map(function (c) { return '<td>' + inp(c + '12') + '</td>'; }).join('') + '</tr>';
     h += '<tr><td>7</td><th>' + wbSpan('B.5-6', ['C13'], 'Impervious area draining to the landscape area (sq. ft.)') + '</th>' + B56C.map(function (c) { return '<td>' + inp(c + '13') + '</td>'; }).join('') + '</tr>';
@@ -491,7 +491,7 @@
   function b56SD() {
     var w = wsInputs('B.5-6'), dim = /Met/.test(g('B.5-6', 'E21')) ? ' dim' : '';
     var h = '<div class="bs-sec' + dim + '">Line 16: Site design BMPs (document how each credit is calculated in the PDP SWQMP)</div><div class="bs-tbl-wrap' + dim + '"><table class="bs-tbl"><thead><tr><th>ID</th><th>Site design type</th><th>Credit (cu. ft.)</th></tr></thead><tbody>';
-    for (var r = 27; r <= 31; r++) h += '<tr><td>' + (r - 26) + '</td><td><input type="text" class="txt" data-text="D' + r + '" value="' + esc(w['D' + r] || '') + '" placeholder="e.g. trees, rain barrels"></td><td><input type="number" step="any" data-cell="I' + r + '" value="' + esc(w['I' + r] !== undefined ? w['I' + r] : '') + '" placeholder="0"></td></tr>';
+    for (var r = 27; r <= 31; r++) h += '<tr><td>' + (r - 26) + '</td><td><input type="text" class="txt" data-text="D' + r + '" value="' + esc(w['D' + r] || '') + '" placeholder="e.g. trees, rain barrels"></td><td><input type="text" inputmode="decimal" autocomplete="off" spellcheck="false" data-cell="I' + r + '" value="' + esc(w['I' + r] !== undefined ? w['I' + r] : '') + '" placeholder="0"></td></tr>';
     h += '<tr class="tot"><td>16</td><th>' + wbSpan('B.5-6', ['C32'], 'Sum of volume retention benefits from other site design BMPs') + '</th><td>' + fmt(g('B.5-6', 'I32'), 2) + '</td></tr></tbody></table></div>';
     if (dim) h += '<p class="assume">Lines 13-17 apply only when Line 12 is "No"; they are greyed out because Line 11 ≥ Line 4.</p>';
     return h;
@@ -506,10 +506,10 @@
   var TYPES = ['Biofiltration', 'Biofiltration with Partial Retention', 'Biofiltration downstream of a storage unit', 'Compact (proprietary) biofiltration', 'Retention (infiltration / harvest and use)', 'Flow-thru treatment control', 'Self-retaining', 'Self-mitigating', 'De minimis', 'Other'];
   function renderB1() {
     var t = TAB['B-1'], h = sheetHead(t, 'One row per drainage management area. The worksheets carry the tributary area and area-weighted runoff factor of the DMAs assigned to the active BMP (selector at the top).');
-    h += '<div class="bs-tbl-wrap"><table class="bs-tbl b1"><thead><tr><th>DMA ID</th><th>Area (acres)</th><th>Impervious area (acres)</th><th>% Imp</th><th>HSG</th><th>Area-weighted runoff coefficient</th><th>DCV (cu. ft.)</th><th>Treated by (BMP ID)</th><th>Pollutant control type</th><th>Drains to (POC ID)</th><th></th></tr></thead><tbody>';
+    h += '<div class="bs-tbl-wrap"><table class="bs-tbl b1"><thead><tr><th>DMA ID</th><th>Area (acres)</th><th title="Impervious area (acres)">Imperv. area (acres)</th><th>% Imp</th><th>HSG</th><th title="Area-weighted runoff coefficient">Area-wtd runoff coeff.</th><th>DCV (cu. ft.)</th><th>Treated by (BMP ID)</th><th>Pollutant control type</th><th>Drains to (POC ID)</th><th></th></tr></thead><tbody>';
     S.dmas.forEach(function (r, i) {
       var pi = num(r.area) ? num(r.imp) / num(r.area) : 0, dcv = 3630 * num(r.c) * num(S.d) * num(r.area);
-      var f = function (k, ty) { return '<input data-dma="' + i + '" data-k="' + k + '" type="' + ty + '"' + (ty === 'number' ? ' step="any"' : '') + ' value="' + esc(r[k]) + '">'; };
+      var f = function (k, ty) { return '<input data-dma="' + i + '" data-k="' + k + '" type="text"' + (ty === 'number' ? ' inputmode="decimal" autocomplete="off" spellcheck="false"' : '') + ' value="' + esc(r[k]) + '">'; };
       h += '<tr><td>' + f('id', 'text') + '</td><td>' + f('area', 'number') + '</td><td>' + f('imp', 'number') + '</td><td>' + (pi * 100).toFixed(1) + '%</td><td><select data-dma="' + i + '" data-k="hsg">' + ['', 'A', 'B', 'C', 'D'].map(function (x) { return '<option' + (r.hsg === x ? ' selected' : '') + '>' + x + '</option>'; }).join('') + '</select></td><td>' + f('c', 'number') + '</td><td>' + fmt(dcv, 1) + '</td><td>' + f('bmp', 'text') + '</td><td><select data-dma="' + i + '" data-k="type">' + TYPES.map(function (x) { return '<option' + (r.type === x ? ' selected' : '') + '>' + x + '</option>'; }).join('') + '</select></td><td>' + f('poc', 'text') + '</td><td><button type="button" class="bs-x" data-del="' + i + '" aria-label="Remove ' + esc(r.id) + '">&times;</button></td></tr>';
     });
     h += '</tbody></table></div><button type="button" class="bs-add" id="addDma">+ Add DMA</button>';
@@ -543,7 +543,7 @@
     h += '<div class="bs-units">Area units: <label><input type="radio" name="rcu" value="sf"' + (u === 'sf' ? ' checked' : '') + '> sq. ft.</label> <label><input type="radio" name="rcu" value="ac"' + (u === 'ac' ? ' checked' : '') + '> acres</label></div>';
     h += '<div class="bs-tbl-wrap"><table class="bs-tbl"><thead><tr><th>Surface (Table B.1-1)</th><th>Area (' + (u === 'sf' ? 'sq. ft.' : 'acres') + ')</th><th>Runoff factor C<sub>x</sub></th><th>C<sub>x</sub> × A<sub>x</sub></th><th></th></tr></thead><tbody>';
     S.rc.rows.forEach(function (x, i) {
-      h += '<tr><td><select data-rc="' + i + '" data-k="s">' + SURF.map(function (s) { return '<option' + (x.s === s[0] ? ' selected' : '') + '>' + s[0] + '</option>'; }).join('') + '</select></td><td><input type="number" step="any" data-rc="' + i + '" data-k="a" value="' + esc(x.a) + '"></td><td>' + SC[x.s].toFixed(2) + '</td><td>' + fmt(num(x.a) * SC[x.s], 3) + '</td><td><button type="button" class="bs-x" data-rcdel="' + i + '" aria-label="Remove row">&times;</button></td></tr>';
+      h += '<tr><td><select data-rc="' + i + '" data-k="s">' + SURF.map(function (s) { return '<option' + (x.s === s[0] ? ' selected' : '') + '>' + s[0] + '</option>'; }).join('') + '</select></td><td><input type="text" inputmode="decimal" autocomplete="off" spellcheck="false" data-rc="' + i + '" data-k="a" value="' + esc(x.a) + '"></td><td>' + SC[x.s].toFixed(2) + '</td><td>' + fmt(num(x.a) * SC[x.s], 3) + '</td><td><button type="button" class="bs-x" data-rcdel="' + i + '" aria-label="Remove row">&times;</button></td></tr>';
     });
     h += '<tr class="tot"><th>Totals</th><td>' + fmt(r.sa, 3) + '</td><td></td><td>' + fmt(r.sca, 3) + '</td><td></td></tr></tbody></table></div><button type="button" class="bs-add" id="addRc">+ Add surface</button>';
     h += '<div class="bs-row t-calc"><span class="bs-ln">C</span><div class="bs-lbl"><span>Area-weighted runoff factor (Equation B.1-2)</span><code class="bs-eq">= Σ(Cx × Ax) / Σ Ax<br>= ' + fmt(r.sca, 3) + ' / ' + fmt(r.sa, 3) + '</code></div><div class="bs-val"><strong id="rcC">' + fmt(r.c, 4) + '</strong></div><span class="bs-unit"></span></div>';
@@ -551,7 +551,7 @@
     var d = S.rc.disp;
     h += '<div class="bs-sec"><label><input type="checkbox" id="dispOn"' + (d.on ? ' checked' : '') + '> Impervious area dispersion (SD-B): Table B.2-1 adjustment</label></div>';
     if (d.on) {
-      h += '<div class="bs-grid3"><label>Impervious area (acres)<input type="number" step="any" data-disp="imp" value="' + esc(d.imp) + '"></label><label>Pervious area (acres)<input type="number" step="any" data-disp="perv" value="' + esc(d.perv) + '"></label><label>Pervious area HSG<select data-disp="hsg">' + ['A', 'B', 'C', 'D'].map(function (x) { return '<option' + (d.hsg === x ? ' selected' : '') + '>' + x + '</option>'; }).join('') + '</select></label></div>';
+      h += '<div class="bs-grid3"><label>Impervious area (acres)<input type="text" inputmode="decimal" autocomplete="off" spellcheck="false" data-disp="imp" value="' + esc(d.imp) + '"></label><label>Pervious area (acres)<input type="text" inputmode="decimal" autocomplete="off" spellcheck="false" data-disp="perv" value="' + esc(d.perv) + '"></label><label>Pervious area HSG<select data-disp="hsg">' + ['A', 'B', 'C', 'D'].map(function (x) { return '<option' + (d.hsg === x ? ' selected' : '') + '>' + x + '</option>'; }).join('') + '</select></label></div>';
       h += '<div class="bs-row t-calc"><span class="bs-ln">1</span><div class="bs-lbl"><span>Impervious to pervious ratio</span><code class="bs-eq">= ' + fmt(num(d.imp), 3) + ' / ' + fmt(num(d.perv), 3) + '</code></div><div class="bs-val"><strong>' + fmt(r.ratio, 3) + '</strong></div><span class="bs-unit"></span></div>';
       h += '<div class="bs-row t-calc"><span class="bs-ln">2</span><div class="bs-lbl"><span>Adjustment factor, Table B.2-1 (linear interpolation; a ratio below 1 uses the ratio-1 column)</span>' + (r.ratio > 4 ? '<span class="bs-warn">Ratio greater than 4: the Table B.2-1 adjustment is not allowed (Appendix B.5 covers higher ratios).</span>' : '') + '</div><div class="bs-val"><strong>' + fmt(r.f, 3) + '</strong></div><span class="bs-unit"></span></div>';
       h += '<div class="bs-row t-calc"><span class="bs-ln">3</span><div class="bs-lbl"><span>Adjusted runoff factor (only the impervious 0.9 factor is adjusted)</span><code class="bs-eq">= (Aimp × 0.9 × factor + Aperv × Cperv) / (Aimp + Aperv)<br>= (' + fmt(num(d.imp), 3) + ' × 0.9 × ' + fmt(r.f, 3) + ' + ' + fmt(num(d.perv), 3) + ' × ' + r.pc + ') / ' + fmt(num(d.imp) + num(d.perv), 3) + '</code></div><div class="bs-val"><strong id="rcAdj">' + fmt(r.adj, 3) + '</strong></div><span class="bs-unit"></span></div>';
@@ -561,18 +561,18 @@
   }
   function renderConv() {
     var sf = num(S.conv.sf), h = sheetHead(TAB.CONV, '1 acre = 43,560 sq. ft.');
-    h += '<div class="bs-conv"><label>Square feet<input type="number" step="any" id="cvSf" value="' + +sf.toFixed(4) + '"></label><span class="bs-swap">' + ico('swap') + '</span><label>Acres<input type="number" step="any" id="cvAc" value="' + +(sf / 43560).toFixed(6) + '"></label></div>';
+    h += '<div class="bs-conv"><label>Square feet<input type="text" inputmode="decimal" autocomplete="off" spellcheck="false" id="cvSf" value="' + +sf.toFixed(4) + '"></label><span class="bs-swap">' + ico('swap') + '</span><label>Acres<input type="text" inputmode="decimal" autocomplete="off" spellcheck="false" id="cvAc" value="' + +(sf / 43560).toFixed(6) + '"></label></div>';
     h += '<code class="bs-eq big">' + fmt(sf, 2) + ' sq. ft. / 43,560 = ' + fmt(sf / 43560, 6) + ' ac</code>';
     return h;
   }
   function renderB21() {
     var t = trib(), dcv = dcvB21(), h = sheetHead(TAB['B.2-1'], 'A and C are the totals of the DMAs assigned to the active BMP in Worksheet B-1.');
     var row = function (n, lbl, field, unit, eq, cls) { return '<div class="bs-row ' + (cls || (eq ? 't-calc' : 't-in')) + '" data-line="' + n + '"><span class="bs-ln">' + n + '</span><div class="bs-lbl"><span>' + lbl + '</span>' + (eq || '') + '</div><div class="bs-val">' + field + '</div><span class="bs-unit">' + unit + '</span></div>'; };
-    h += '<div class="bs-rows">' + row(1, '85th percentile 24-hr storm depth from Figure B.1-1 (d)', '<input type="number" step="any" id="b21d" value="' + esc(S.d) + '">', 'inches', '', 't-in') +
+    h += '<div class="bs-rows">' + row(1, '85th percentile 24-hr storm depth from Figure B.1-1 (d)', '<input type="text" inputmode="decimal" autocomplete="off" spellcheck="false" id="b21d" value="' + esc(S.d) + '">', 'inches', '', 't-in') +
       row(2, 'Area tributary to BMP(s) (A)', '<strong>' + fmt(t.ac, 4) + '</strong>', 'acres', '<span class="bs-chip link">from B-1</span>', 't-in') +
       row(3, 'Area weighted runoff factor (estimate using Appendix B.1.1 and B.2.1) (C)', '<strong>' + fmt(t.c, 4) + '</strong>', 'unitless', '<span class="bs-chip link">from B-1</span>', 't-in') +
-      row(4, 'Trees credit volume (TCV). In the SWQMP list the number of trees, size of each tree, soil volume installed for each tree, contributing area to each tree and the inlet opening dimension for each tree.', '<input type="number" step="any" id="b21t" value="' + esc(S.tcv) + '">', 'cubic-feet', '', 't-in') +
-      row(5, 'Rain barrels credit volume (RCV). In the SWQMP list the number of rain barrels, size of each rain barrel and the use of the captured stormwater runoff.', '<input type="number" step="any" id="b21r" value="' + esc(S.rcv) + '">', 'cubic-feet', '', 't-in') +
+      row(4, 'Trees credit volume (TCV). In the SWQMP list the number of trees, size of each tree, soil volume installed for each tree, contributing area to each tree and the inlet opening dimension for each tree.', '<input type="text" inputmode="decimal" autocomplete="off" spellcheck="false" id="b21t" value="' + esc(S.tcv) + '">', 'cubic-feet', '', 't-in') +
+      row(5, 'Rain barrels credit volume (RCV). In the SWQMP list the number of rain barrels, size of each rain barrel and the use of the captured stormwater runoff.', '<input type="text" inputmode="decimal" autocomplete="off" spellcheck="false" id="b21r" value="' + esc(S.rcv) + '">', 'cubic-feet', '', 't-in') +
       row(6, 'Calculate DCV', '<strong id="b21dcv">' + fmt(dcv, 1) + '</strong>', 'cubic-feet', '<code class="bs-eq">= (3630 × C × d × A) − TCV − RCV<br>= (3630 × ' + fmt(t.c, 4) + ' × ' + fmt(num(S.d), 2) + ' × ' + fmt(t.ac, 4) + ') − ' + fmt(num(S.tcv)) + ' − ' + fmt(num(S.rcv)) + '</code>' + (dcv < 0 ? '<span class="bs-warn">Credits exceed the volume: DCV is negative as computed (the worksheet does not floor it at zero).</span>' : '')) + '</div>';
     h += '<p class="assume"><a href="' + ROOT + 'screening-map/">Open the Stormwater Screening Map</a> to read the Figure B.1-1 isopluvial depth for a site.</p>';
     return h;
@@ -589,7 +589,7 @@
       row(2, 'Adjusted runoff factor for drainage area (Refer to Appendix B.1 and B.2). Attach supporting calculations.', '<strong>' + fmt(r.C, 4) + '</strong>', '(unitless)', '<span class="bs-chip link">from B-1</span>', 't-in') +
       row(3, 'Design rainfall intensity', '<strong class="const">0.20</strong>', 'in/hr', '<span class="bs-chip fixed">fixed on worksheet</span>', 't-const') +
       row(4, 'Design flow rate for biofiltration <label class="bs-inline"><input type="checkbox" id="i10s"' + (S.i10.storage ? ' checked' : '') + '> storage unit upstream (footnote 1: use Line 14 of Worksheet B.5-5 instead)</label>', '<strong id="i10l4">' + fmt(r.l4, 4) + '</strong>', 'cfs', S.i10.storage ? '<code class="bs-eq">= B.5-5 Line 14 = ' + fmt(r.l4, 4) + '</code>' : '<code class="bs-eq">= 1.5 × (L1 / 43,560) × L2 × L3<br>= 1.5 × (' + fmt(r.A, 0) + ' / 43,560) × ' + fmt(r.C, 4) + ' × 0.20</code>') +
-      row(5, 'Proprietary biofiltration flow rate treatment capacity (provided by manufacturer; attach supporting documentation)', '<input type="number" step="any" id="i10c" value="' + esc(S.i10.cap) + '" placeholder="0">', 'cfs', '', 't-in') +
+      row(5, 'Proprietary biofiltration flow rate treatment capacity (provided by manufacturer; attach supporting documentation)', '<input type="text" inputmode="decimal" autocomplete="off" spellcheck="false" id="i10c" value="' + esc(S.i10.cap) + '" placeholder="0">', 'cfs', '', 't-in') +
       row(6, 'Outlet outflow rate, if the biofiltration unit is outlet controlled (e.g., there is orifice cap that controls the outflow flow rate). Enter N/A if not outlet controlled.', '<input type="text" id="i10o" value="' + esc(S.i10.outlet) + '">', 'cfs', '', 't-in') +
       row(7, 'Treatment flow rate: the smaller of Line 5 and Line 6; if Line 6 is N/A, Line 5', '<strong>' + fmt(r.l7, 4) + '</strong>', 'cfs', '<code class="bs-eq">= ' + (r.l6 === null ? 'L5 = ' + fmt(r.l5, 4) : 'MIN(' + fmt(r.l5, 4) + ', ' + fmt(r.l6, 4) + ')') + '</code>') +
       row(8, 'Is Line 7 ≥ Line 4? If No: revise the design, or show 80% of average annual runoff is treated by continuous simulation (Appendix F.2 / G), or propose a different treatment method.', '<span class="bs-badge big ' + (r.ok ? 'yes' : 'no') + '">' + ico(r.ok ? 'ok' : 'no') + (r.ok ? 'YES' : 'NO') + '</span>', '', '<span class="bs-stat-txt">' + (r.ok ? 'Yes - sizing requirements met.' : 'No - see the options on Form I-10 Line 8.') + '</span>', 't-status') + '</div>';
@@ -699,8 +699,13 @@
   }
   function render() {
     cache = {};
-    var active = document.activeElement, key = selKey(active), pos = null;
-    try { if (key && active.selectionStart != null) pos = active.selectionStart; } catch (e) { pos = null; }
+    var active = document.activeElement, key = selKey(active), keep = null, pos = null;
+    /* The focused text field is not re-created: the new markup's twin is swapped for the live node, so the
+       caret, selection and partially typed value ("12.") survive the re-render (fixes the caret jumping to the front). */
+    if (key && active.tagName === 'INPUT' && !/^(checkbox|radio|file)$/.test(active.type)) {
+      keep = active;
+      try { pos = [active.selectionStart, active.selectionEnd, active.selectionDirection]; } catch (e) { pos = null; }
+    }
     if (!TAB[S.tab]) S.tab = 'B-1';
     renderCarried(); renderPicker();
     var id = S.tab, h;
@@ -710,10 +715,18 @@
     else if (id === 'CONV') h = renderConv();
     else if (id === 'B.2-1') h = renderB21();
     else h = renderI10();
-    $('sheet').innerHTML = h;
+    var sheet = $('sheet'), tmp = document.createElement('div'), twin = null;
+    tmp.innerHTML = h;
+    if (keep) { twin = tmp.querySelector(key); if (twin && twin.tagName === 'INPUT') { keep.className = twin.className; twin.parentNode.replaceChild(keep, twin); } else twin = null; }
+    sheet.textContent = '';
+    while (tmp.firstChild) sheet.appendChild(tmp.firstChild);
     bf1Mount(id);
     renderSide(id);
-    if (key) { var el = $('sheet').querySelector(key); if (el) { el.focus(); try { if (pos != null) el.setSelectionRange(pos, pos); } catch (e) { /* number inputs have no selection */ } } }
+    renderPrintHead(id);
+    if (key) {
+      var el = twin ? keep : sheet.querySelector(key);
+      if (el) { try { el.focus({ preventScroll: true }); } catch (e) { el.focus(); } try { if (pos && pos[0] != null) el.setSelectionRange(pos[0], pos[1], pos[2] || 'none'); } catch (e) { /* no selection API */ } }
+    }
     save();
   }
 
@@ -764,20 +777,163 @@
   function flash(b, t) { var o = b.innerHTML; b.textContent = t + ' ✓'; b.classList.add('done'); setTimeout(function () { b.innerHTML = o; b.classList.remove('done'); }, 1200); }
   $('projName').addEventListener('input', function () { S.project = this.value; save(); var ta = $('calcText'); if (ta) ta.value = calcText(S.tab); });
   $('bmpSel').addEventListener('change', function () { S.bmp = this.value; render(); });
-  $('printBtn').addEventListener('click', function () { window.print(); });
+  /* ---------------- print header, PDF export, compact header ---------------- */
+  function pad2(n) { return ('0' + n).slice(-2); }
+  function today() { var d = new Date(); return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()); }
+  function stamp() { var d = new Date(); return today() + ' ' + pad2(d.getHours()) + ':' + pad2(d.getMinutes()); }
+  function renderPrintHead(id) {
+    var ph = $('printHead'), t = TAB[id]; if (!ph || !t) return;
+    ph.innerHTML = '<div><b>' + esc(S.project || 'Untitled project') + '</b><span>' + esc(t.code + ' - ' + t.title) + '</span></div><div class="r"><span>Active BMP: ' + esc(S.bmp) + '</span><span>Printed ' + esc(stamp()) + '</span></div>';
+  }
+  $('printBtn').addEventListener('click', function () { renderPrintHead(S.tab); window.print(); });
+
+  var VENDOR = './vendor/';
+  function loadScript(src) { return new Promise(function (res, rej) { var s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = function () { rej(new Error('Could not load ' + src)); }; document.head.appendChild(s); }); }
+  function pdfLibs() {
+    var need = [];
+    if (!window.html2canvas) need.push(loadScript(VENDOR + 'html2canvas.min.js'));
+    if (!(window.jspdf && window.jspdf.jsPDF)) need.push(loadScript(VENDOR + 'jspdf.umd.min.js'));
+    return Promise.all(need);
+  }
+  function pdfTabs(all) {
+    if (!all) return [S.tab];
+    var rcDef = JSON.stringify(defaults().rc);
+    return TABS.map(function (t) { return t.id; }).filter(function (id) {
+      return id === S.tab || id === 'B-1' || id === 'B.2-1' || (id === 'RC' && JSON.stringify(S.rc) !== rcDef) ||
+        (S.w[id] && Object.keys(S.w[id]).length > 0) || (id === 'I-10.A' && num(S.i10.cap) > 0);
+    });
+  }
+  /* jsPDF standard fonts are WinAnsi: map the few symbols the calc text uses */
+  function pdfSafe(s) {
+    return String(s).replace(/\u2212|\u2011|\u2010/g, '-').replace(/\u2265/g, '>=').replace(/\u2264/g, '<=').replace(/\u03a3/g, 'Sum ').replace(/\u2194/g, '<->')
+      .replace(/\u21ba/g, '').replace(/\u2192/g, '->').replace(/\u2026/g, '...').replace(/[\u2018\u2019]/g, "'").replace(/[\u201c\u201d]/g, '"').replace(/\u2022/g, '-')
+      .replace(/\u2013|\u2014/g, '-').replace(/\u2070/g, '^0').replace(/\u2076/g, '^6').replace(/\u00a0/g, ' ').replace(/[^\x09\x0a\x0d\x20-\x7e\xa0-\xff]/g, '?');
+  }
+  function nextFrame() { return new Promise(function (r) { requestAnimationFrame(function () { setTimeout(r, 30); }); }); }
+  /* copy of the rendered worksheet + result card, inputs shown as values, controls removed */
+  function pdfSnapshot(id) {
+    var box = document.createElement('div'); box.className = 'bs-pdf';
+    var sh = $('sheet').cloneNode(true); sh.removeAttribute('id'); sh.removeAttribute('aria-live');
+    var src = $('sheet').querySelectorAll('input,select,textarea'), dst = sh.querySelectorAll('input,select,textarea');
+    [].forEach.call(dst, function (el, i) {
+      var o = src[i];
+      if (el.type === 'checkbox' || el.type === 'radio') { el.checked = o.checked; if (el.type === 'radio' && !o.checked && el.closest('.bs-units')) { var lb = el.closest('label'); if (lb) lb.remove(); } return; }
+      var v = el.tagName === 'SELECT' ? (o.options[o.selectedIndex] ? o.options[o.selectedIndex].text : '') : o.value;
+      var sp = document.createElement('span'); sp.className = 'bs-pdf-in' + (o.classList.contains('is-linked') ? ' is-linked' : '') + (el.closest('.bs-val') ? ' r' : '');
+      sp.textContent = v === '' ? (o.placeholder || '-') : v;
+      el.parentNode.replaceChild(sp, el);
+    });
+    [].forEach.call(sh.querySelectorAll('.bs-x,.bs-add,button.bs-chip,.bs-apply,.bf1-ctl,.bf1-tip,.bs-sheet-head .thumb,[data-bf="tipx"]'), function (el) { el.remove(); });
+    [].forEach.call(sh.querySelectorAll('.bs-x'), function (el) { el.remove(); });
+    box.appendChild(sh);
+    var side = document.createElement('div'); side.className = 'bs-pdf-side';
+    ['.bs-result', '.bs-fixes'].forEach(function (q) { var n = $('side').querySelector(q); if (n) side.appendChild(n.cloneNode(true)); });
+    var t = TAB[id]; if (t.doc) { var c = document.createElement('p'); c.className = 'bs-pdf-cite'; c.textContent = 'Reference: ' + cite(t) + '.' + (SPECS[id] ? ' Calculation logic: ' + XLS + ', tab "' + SPECS[id].sheet + '".' : ''); side.appendChild(c); }
+    box.appendChild(side);
+    return box;
+  }
+  function pdfCuts(box) {
+    var top = box.getBoundingClientRect().top, cuts = [];
+    [].forEach.call(box.querySelectorAll('.bs-sheet-head,.bs-row,.bs-sec,.bs-tbl tr,.bs-tbl-wrap,.bs-flag,.bs-note,.assume,.bs-sum,.bs-units,.bs-conv,.bs-grid3,.bs-eq.big,.bf1 > *,.bs-rows > *,.bs-pdf-side > *,.bs-pdf-side'), function (el) {
+      var r = el.getBoundingClientRect(); if (r.height) { cuts.push(Math.round(r.top - top)); cuts.push(Math.round(r.bottom - top)); }
+    });
+    return cuts.sort(function (a, b) { return a - b; });
+  }
+  function buildPdf(all) {
+    var ids = pdfTabs(all), orig = S.tab, sy = window.scrollY, busy = document.createElement('div');
+    busy.className = 'bs-busy'; busy.innerHTML = '<div><b>Building PDF…</b><span id="busyMsg">Loading</span></div>'; document.body.appendChild(busy);
+    var J, doc, PW = 612, PH = 792, M = 36, HEAD = 46, FOOT = 26, CW = PW - 2 * M, CH = PH - M - HEAD - FOOT - M + 22, PX = 760, K = CW / PX;
+    function header(t) {
+      doc.setDrawColor(24, 166, 165); doc.setLineWidth(1.2); doc.line(M, M + 30, PW - M, M + 30);
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor(9, 46, 74); doc.text(pdfSafe(S.project || 'Untitled project'), M, M + 9);
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5); doc.setTextColor(11, 93, 107); doc.text(pdfSafe(t.code + ' - ' + t.title), M, M + 23);
+      doc.setFontSize(8.5); doc.setTextColor(82, 108, 125);
+      doc.text('Saved ' + stamp(), PW - M, M + 9, { align: 'right' }); doc.text(pdfSafe('Active BMP: ' + S.bmp), PW - M, M + 23, { align: 'right' });
+    }
+    function page(t, first) { if (!first) doc.addPage('letter', 'portrait'); header(t); return M + HEAD; }
+    var firstPage = true;
+    return pdfLibs().then(function () {
+      J = window.jspdf.jsPDF; doc = new J({ unit: 'pt', format: 'letter', orientation: 'portrait', compress: true });
+      doc.setProperties({ title: (S.project ? S.project + ' - ' : '') + 'BMP sizing worksheets', subject: ids.map(function (i) { return TAB[i].code; }).join(', '), creator: 'BMP Sizing Calculator (reviewer tool, not an official City of San Diego product)' });
+      try { window.dispatchEvent(new Event('beforeprint')); } catch (e) { /* section animation keeps running */ }
+      var chain = Promise.resolve();
+      ids.forEach(function (id, n) {
+        chain = chain.then(function () {
+          $('busyMsg').textContent = TAB[id].code + ' (' + (n + 1) + ' of ' + ids.length + ')';
+          S.tab = id; render(); return nextFrame();
+        }).then(function () {
+          var box = pdfSnapshot(id), t = TAB[id], txt = calcText(id); document.body.appendChild(box);
+          var cuts = pdfCuts(box), H = Math.ceil(box.scrollHeight);
+          return window.html2canvas(box, { scale: 1.75, backgroundColor: '#ffffff', logging: false, useCORS: true, windowWidth: 1280 }).then(function (cv) {
+            box.remove();
+            var sc = cv.height / H, y = 0, cap = CH / K, yPt = 0;
+            while (y < H - 1) {
+              var end = Math.min(H, y + cap);
+              if (end < H) { var best = 0; cuts.forEach(function (c) { if (c > y + 60 && c <= end) best = c; }); if (best) end = best; }
+              var hh = Math.round((end - y) * sc), pc = document.createElement('canvas'); pc.width = cv.width; pc.height = hh;
+              var cx = pc.getContext('2d'); cx.fillStyle = '#fff'; cx.fillRect(0, 0, pc.width, hh); cx.drawImage(cv, 0, Math.round(y * sc), cv.width, hh, 0, 0, cv.width, hh);
+              yPt = page(t, firstPage); firstPage = false;
+              doc.addImage(pc.toDataURL('image/jpeg', 0.84), 'JPEG', M, yPt, CW, (end - y) * K, undefined, 'FAST');
+              yPt += (end - y) * K; y = end;
+            }
+            /* plan-check calc as real (selectable, searchable) text */
+            var lines = doc.setFont('courier', 'normal').setFontSize(8).splitTextToSize(pdfSafe(txt), CW), LH = 10;
+            if (yPt + 40 > PH - M - FOOT) yPt = page(t, false); else yPt += 14;
+            doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor(9, 46, 74); doc.text('Plan-check calc (text)', M, yPt + 8); yPt += 20;
+            doc.setFont('courier', 'normal'); doc.setFontSize(8); doc.setTextColor(36, 59, 74);
+            lines.forEach(function (ln) { if (yPt + LH > PH - M - FOOT + 8) { yPt = page(t, false) + 4; doc.setFont('courier', 'normal'); doc.setFontSize(8); doc.setTextColor(36, 59, 74); } doc.text(ln, M, yPt + 7); yPt += LH; });
+          });
+        });
+      });
+      return chain;
+    }).then(function () {
+      var np = doc.getNumberOfPages();
+      for (var i = 1; i <= np; i++) {
+        doc.setPage(i); doc.setDrawColor(216, 225, 229); doc.setLineWidth(0.6); doc.line(M, PH - M - 12, PW - M, PH - M - 12);
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(7); doc.setTextColor(96, 119, 137);
+        doc.text('BMP Sizing Calculator - independent reviewer tool, not an official City of San Diego product. Verify against the source documents.', M, PH - M);
+        doc.text('Page ' + i + ' of ' + np, PW - M, PH - M, { align: 'right' });
+      }
+      var name = (S.project || 'BMP-sizing').replace(/[^\w.-]+/g, '_') + '_' + (ids.length > 1 ? 'worksheets' : ids[0].replace(/[^\w.-]+/g, '')) + '_' + today() + '.pdf';
+      return { doc: doc, name: name, pages: np, tabs: ids };
+    }).finally(function () {
+      S.tab = orig; render(); window.scrollTo(0, sy); busy.remove();
+      try { window.dispatchEvent(new Event('afterprint')); } catch (e) { /* ignore */ }
+    });
+  }
+  function savePdf(all, btn) {
+    if (btn) btn.disabled = true;
+    return buildPdf(all).then(function (r) {
+      r.doc.save(r.name); $('savedNote').textContent = 'Saved ' + r.name + ' (' + r.pages + ' page' + (r.pages === 1 ? '' : 's') + ') to your downloads.'; $('savedNote').classList.add('msg'); return r;
+    }).catch(function (e) {
+      if (confirm('The PDF could not be built here (' + (e && e.message || e) + '). Open the print dialog instead? Choose "Save as PDF" as the printer.')) { renderPrintHead(S.tab); window.print(); }
+    }).finally(function () { if (btn) btn.disabled = false; });
+  }
+  $('pdfBtn').addEventListener('click', function () { savePdf(false, this); });
+  $('pdfAllBtn').addEventListener('click', function () { savePdf(true, this); });
+
+  var UIKEY = 'sw-bmp-sizing-ui', UI = {};
+  try { UI = JSON.parse(localStorage.getItem(UIKEY) || '{}') || {}; } catch (e) { UI = {}; }
+  function applyUi() {
+    document.body.classList.toggle('bs-compact', !UI.intro);
+    var b = $('introBtn'); if (b) { b.textContent = UI.intro ? 'Hide intro' : 'Show intro'; b.setAttribute('aria-expanded', UI.intro ? 'true' : 'false'); }
+  }
+  $('introBtn').addEventListener('click', function () { UI.intro = !UI.intro; try { localStorage.setItem(UIKEY, JSON.stringify(UI)); } catch (e) { /* private mode */ } applyUi(); });
+  applyUi();
+
   $('resetBtn').addEventListener('click', function () { if (confirm('Clear all inputs and start over?')) { S = defaults(); render(); } });
   $('saveBtn').addEventListener('click', function () {
     var blob = new Blob([JSON.stringify({ tool: 'bmp-sizing', version: 1, saved: new Date().toISOString(), state: S }, null, 1)], { type: 'application/json' });
     var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = (S.project || 'bmp-sizing').replace(/[^\w.-]+/g, '_') + '.json';
     document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 500);
-    $('savedNote').textContent = 'Saved ' + a.download + ' to your downloads.';
+    $('savedNote').textContent = 'Saved ' + a.download + ' to your downloads.'; $('savedNote').classList.add('msg');
   });
   $('openFile').addEventListener('change', function () {
     var f = this.files[0], inp = this; if (!f) return;
     f.text().then(function (t) {
       var o = JSON.parse(t); if (!o.state || !o.state.dmas) throw new Error('bad file');
       S = o.state; var d = defaults(); Object.keys(d).forEach(function (k) { if (S[k] === undefined) S[k] = d[k]; });
-      render(); $('savedNote').textContent = 'Opened ' + f.name + '.';
+      render(); $('savedNote').textContent = 'Opened ' + f.name + '.'; $('savedNote').classList.add('msg');
     }).catch(function () { alert('That file is not a saved BMP sizing project.'); });
     inp.value = '';
   });
@@ -799,7 +955,7 @@
 
   var h0 = decodeURIComponent(location.hash.slice(1)); if (TAB[h0]) S.tab = h0;
   render();
-  window.BMPSizing = { state: function () { return S; }, set: function (s) { S = s; render(); }, defaults: defaults, render: render, go: go, calcText: calcText, g: function (id, c) { cache = {}; return g(id, c); }, b54manual: function () { cache = {}; return b54manual(); }, b54wb: function () { cache = {}; return b54wb(); }, wbText: function (id, n) { var L = SPECS[id].lines.filter(function (x) { return x.n === n; })[0]; return L ? wbText(id, L) : null; }, rcCalc: rcCalc, i10: i10, trib: trib, dcv: dcvB21,
+  window.BMPSizing = { state: function () { return S; }, set: function (s) { S = s; render(); }, defaults: defaults, render: render, go: go, calcText: calcText, g: function (id, c) { cache = {}; return g(id, c); }, b54manual: function () { cache = {}; return b54manual(); }, b54wb: function () { cache = {}; return b54wb(); }, wbText: function (id, n) { var L = SPECS[id].lines.filter(function (x) { return x.n === n; })[0]; return L ? wbText(id, L) : null; }, rcCalc: rcCalc, i10: i10, trib: trib, dcv: dcvB21, buildPdf: buildPdf, pdfTabs: pdfTabs,
     /* test hook: the input cells this page feeds the City workbook formulas, and every formula result */
     dump: function (id) { cache = {}; var sh = evalSheet(id), cells = WBD.sheets[SPECS[id].sheet].cells, out = {}; Object.keys(cells).forEach(function (a) { if (cells[a].f) { var v = sh.get(a); out[a] = E.isErr(v) ? v.err : v; } }); return { sheet: SPECS[id].sheet, inputs: sh.inputs, out: out }; } };
 })();

@@ -19,8 +19,9 @@
       <div>
         <span class="eyebrow-label">Appendix B sizing worksheets &middot; reviewer tool</span>
         <h1>Size it. Check it.<br><em>Cite it.</em></h1>
-        <p>Worksheets B-1, B.2-1, B.5-1 through B.5-7 and I-10.A, computed with the formulas, lookup tables and line wording of the City's Appendix B.5 Excel workbook (Version 2.0, August 2024). Every result shows its equations with your numbers substituted, a pass/fail check, and plan-check text with edition and page citations.</p>
-        <p class="bs-hero-note"><strong>Not an official City of San Diego product.</strong> Independent reviewer aid. Verify against the Stormwater Standards (Part 1 BMP Design Manual, August 2024 Edition) and the City's worksheets before relying on a result. <button type="button" class="bs-link" id="aboutBtn">About, sources &amp; differences</button></p>
+        <p class="bs-compact-title">BMP Sizing Calculator</p>
+        <p class="bs-intro">Worksheets B-1, B.2-1, B.5-1 through B.5-7 and I-10.A, computed with the formulas, lookup tables and line wording of the City's Appendix B.5 Excel workbook (Version 2.0, August 2024). Every result shows its equations with your numbers substituted, a pass/fail check, and plan-check text with edition and page citations.</p>
+        <p class="bs-hero-note"><strong>Not an official City of San Diego product.</strong> <span class="bs-note-long">Independent reviewer aid. Verify against the Stormwater Standards (Part 1 BMP Design Manual, August 2024 Edition) and the City's worksheets before relying on a result.</span><span class="bs-note-short">Verify against the source documents.</span> <button type="button" class="bs-link" id="aboutBtn">About, sources &amp; differences</button></p>
       </div>
       <div class="bs-proj" aria-label="Project">
         <div class="bs-proj-row">
@@ -31,8 +32,11 @@
         <div class="bs-proj-btns">
           <button type="button" id="saveBtn" title="Download the project as a JSON file">Save project</button>
           <label class="bs-file" title="Open a saved project JSON file">Open project<input type="file" id="openFile" accept=".json,application/json"></label>
-          <button type="button" id="printBtn">Print worksheet</button>
+          <button type="button" id="pdfBtn" class="pdf" title="Download this worksheet (inputs, equations, results and plan-check text) as a PDF file">Save as PDF</button>
+          <button type="button" id="pdfAllBtn" title="One PDF with Worksheets B-1, B.2-1 and every worksheet you have entered values in">PDF: all worksheets</button>
+          <button type="button" id="printBtn" title="Print this worksheet (or choose Save as PDF in the print dialog)">Print</button>
           <button type="button" id="resetBtn" class="ghost">Reset</button>
+          <button type="button" id="introBtn" class="ghost" aria-expanded="false">Show intro</button>
         </div>
         <p class="bs-saved" id="savedNote">Inputs are kept in this browser only (local storage).</p>
       </div>
@@ -41,6 +45,7 @@
 
   <nav class="bs-picker" aria-label="Worksheets"><div class="bs-wrap"><div class="bs-cards" id="picker" role="tablist"></div></div></nav>
 
+  <div class="bs-wrap bs-print-head" id="printHead" aria-hidden="true"></div>
   <main class="bs-wrap bs-main">
     <section class="bs-sheet" id="sheet" aria-live="polite"></section>
     <aside class="bs-side" id="side"></aside>

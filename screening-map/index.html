@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <title>Stormwater Screening Map (reviewer tool) - San Diego Storm Water Reviewer Tools</title>
-  <meta name="description" content="Preliminary reviewer screening of San Diego project locations against the 85th-percentile 24-hour isopluvials, Appendix O ESA, and ASBS layers. Not an official City of San Diego product.">
+  <meta name="description" content="Preliminary reviewer screening of San Diego project locations against the 85th-percentile 24-hour isopluvials, Appendix O ESA, ASBS layers, and a potential HMP exemption screen (SWS Sec. 1.6, Fig. 1-2). Not an official City of San Diego product.">
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230867a8'/%3E%3Cpath d='M16 5C12 11 8 15 8 20a8 8 0 0016 0c0-5-4-9-8-15z' fill='%23fff'/%3E%3C/svg%3E">
   <link rel="stylesheet" href="../assets/vendor/leaflet/leaflet.css">
   <link rel="stylesheet" href="../assets/site.css">
@@ -44,7 +44,7 @@
           <button id="copyBtn" class="small-btn" type="button" hidden>Copy</button>
         </div>
         <div id="resultBody" class="result-body">
-          <p class="muted">Results show the 85th-percentile 24-hour storm depth, ESA status, and ASBS status with distance and direction to each nearest feature.</p>
+          <p class="muted">Results show the 85th-percentile 24-hour storm depth, ESA status, ASBS status, and a potential HMP exemption screen, with distance and direction to each nearest feature.</p>
         </div>
       </section>
 
@@ -59,6 +59,8 @@
           <span><strong>ESA (incl. 200 ft buffer)</strong><small>LDM Appendix O &middot; ESA_CSD_200ft</small></span><span class="status" id="esaStatus">Loading</span></label>
         <label class="layer-card switch"><input type="checkbox" data-layer="asbs" checked><span class="knob"></span><span class="sw sw-asbs"></span>
           <span><strong>ASBS boundary + drainage areas</strong><small>LDM Appendix O &middot; ASBSBound, asbswatersheds_area</small></span><span class="status" id="asbsStatus">Loading</span></label>
+        <label class="layer-card switch"><input type="checkbox" data-layer="hmp" checked><span class="knob"></span><span class="sw sw-hmp"></span>
+          <span><strong>HMP exemption (potential)</strong><small>Exempt waters, WMAA exempt conveyances &amp; river reaches &middot; SWS Fig. 1-2</small></span><span class="status" id="hmpStatus">Loading</span></label>
         <h2>Legend</h2>
         <div class="legend">
           <span><i class="ln" style="background:#eab308"></i>&lt; 0.65 in</span>
@@ -70,6 +72,12 @@
           <span><i class="bx" style="background:#2563eb88;border-color:#1e3a8a"></i>ASBS</span>
           <span><i class="bx dash" style="background:#60a5fa33;border-color:#2563eb"></i>ASBS drainage area</span>
         </div>
+        <div class="legend">
+          <span><i class="bx" style="background:#22d3ee38;border-color:#0891b2"></i>HMP-exempt water (Nodes 2&ndash;4)</span>
+          <span><i class="ln" style="background:#06b6d4"></i>WMAA exempt conveyance</span>
+          <span><i class="ln" style="background:#7c3aed;height:5px"></i>Exempt river reach (Node 5)</span>
+        </div>
+        <p class="legend-note">HMP layer is a <b>potential</b> exemption screen: the applicant must still demonstrate a direct discharge (existing storm drain or concrete-lined channel all the way) and the Fig. 1-2 node conditions.</p>
         <button id="resetBtn" class="text-btn" type="button">Reset to full San Diego view</button>
       </section>
     </aside>
@@ -94,6 +102,7 @@
       <li><b>Storm depth:</b> the nearest 85th-percentile 24-hour isopluvial is searched across <em>all</em> lines (not just the visible map). Distances are measured in NAD83 / California Zone VI (EPSG:2230, US survey ft). An interpolated value between the two nearest lines of different value is shown only as a labeled <em>Reviewer note</em>; the manual requires the depth to be determined using Figure B.1-1 and does not specify interpolation.</li>
       <li><b>ESA:</b> point-in-polygon honoring the polygon holes (areas excluded from the mapped ESA). Distance is to the nearest ESA edge. Points within 100 ft of an edge are flagged to verify.</li>
       <li><b>ASBS:</b> reports separately whether the site is inside an ASBS boundary or inside an ASBS drainage area, with distance and direction to each.</li>
+      <li><b>HMP exemption (potential):</b> distance from the site to (1) the exempt receiving waters listed in Storm Water Standards Part 1 (Aug 2024) Sec. 1.6 &ndash; Pacific Ocean (Node 2, 1-mile coastal strip), San Diego Bay and Mission Bay (Node 3; WMAA polygons exclude the Kendall-Frost reserve and the salt-pond refuge area), and the ten listed reservoirs (Node 4) &ndash; and (2) the regional WMAA&rsquo;s mapped exempt conveyance systems (existing storm drains / hardened channels to those waters) and exempt river reaches (Node 5). Within 300 ft = <em>Potentially exempt</em>; 300&ndash;1,000 ft = <em>Verify</em>; otherwise <em>Not exempt (screening)</em>, or <em>Not mapped as exempt</em> where the subwatershed&rsquo;s receiving water includes an exempt water. The USGS HUC12 subwatershed and its downstream path are shown for context. GIS cannot confirm the direct, uninterrupted hardened connection, outfall location, energy dissipation or invert elevations required by Fig. 1-2; the exemption is at the City&rsquo;s discretion. WMAA waters not on the City list (e.g., lagoons, Lake Poway, Sweetwater Reservoir, Forester Creek, San Luis Rey River) are omitted.</li>
     </ul>
     <h3>Data sources</h3>
     <ul id="sourceList"></ul>
@@ -107,6 +116,7 @@
 
   <script src="../assets/vendor/leaflet/leaflet.js"></script>
   <script src="./screen-core.js"></script>
+  <script src="./hmp-core.js"></script>
   <script src="./app.js"></script>
 </body>
 </html>

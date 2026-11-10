@@ -15,7 +15,10 @@
       edition: 'Metadata created 2023-01-11, modified 2024-06-28; zip Last-Modified 2024-08-14.' },
     asbs: { name: 'City of San Diego Land Development Manual Appendix O, ASBS shapefiles (ASBSBound + asbswatersheds_area)',
       url: 'https://www.sandiego.gov/sites/default/files/asbs_shapefiles_0.zip',
-      edition: 'ASBSBound dated 2005-09-29 (shp 2008-02-28); drainage areas dated 2006-02-01; zip Last-Modified 2023-10-24.' }
+      edition: 'ASBSBound dated 2005-09-29 (shp 2008-02-28); drainage areas dated 2006-02-01; zip Last-Modified 2023-10-24.' },
+    hmp: { name: 'Project Clean Water, Regional WMAA mapping data (WMAA Attachment C, Regional_WMAA_Data_2018_0906 geodatabase): Exempt_Bodies, Exempt_Systems',
+      url: 'https://projectcleanwater.org/document/comprehensive-wmaa-mapping-data/',
+      edition: 'Geodatabase dated 2018-09-06 (files posted 2024-05-13); retrieved Nov 10, 2026. Filtered to the receiving waters listed in SWS Sec. 1.6. Context: USGS Watershed Boundary Dataset HUC12 (public domain, hydro.nationalmap.gov).' }
   };
   var LDM = 'https://www.sandiego.gov/planning/programs/landdevcode/landdevmanual';
   var MANUAL = {
@@ -30,6 +33,10 @@
     asbs: [
       'Storm Water Standards, Part 2: Construction BMP Standards (May 2021 Ed.), Ch. 2, p. 2-2: projects in watersheds draining to an ASBS are prohibited from discharging to an ASBS unless granted an exception by the SWRCB; Appendix A (ASBS Maps: La Jolla and San Diego-Scripps).',
       'Part 1 (Aug 2024 Ed.), Sec. 1.4.1(d) note, p. 1-13: ESAs include areas designated as Areas of Special Biological Significance.'
+    ],
+    hmp: [
+      'Storm Water Standards, Part 1: BMP Design Manual (Aug 2024 Ed.), Sec. 1.6, p. 1-17: "PDP exemptions from hydromodification management requirements are based on the receiving water system." Node criteria pp. 1-17 to 1-20; Figure 1-2 (Applicability of Hydromodification Management BMP Requirements), p. 1-21.',
+      'Same section, p. 1-19 (Node 5): "Refer to the WMAA for any updates to exempt river reaches."'
     ]
   };
 
@@ -53,9 +60,9 @@
   var active = 'satellite'; basemaps.satellite.addTo(map);
   function syncLabels() { var on = $('labelsToggle').checked && active === 'satellite'; if (on) labels.addTo(map); else map.removeLayer(labels); }
 
-  [['esa', 410], ['asbs', 420], ['rain', 430], ['rainLabels', 440], ['site', 650]].forEach(function (p) { map.createPane(p[0]); map.getPane(p[0]).style.zIndex = p[1]; });
+  [['hmp', 405], ['esa', 410], ['asbs', 420], ['rain', 430], ['rainLabels', 440], ['site', 650]].forEach(function (p) { map.createPane(p[0]); map.getPane(p[0]).style.zIndex = p[1]; });
   map.getPane('rainLabels').style.pointerEvents = 'none';
-  var renderer = { esa: L.canvas({ pane: 'esa' }), asbs: L.canvas({ pane: 'asbs' }), rain: L.canvas({ pane: 'rain', tolerance: 0 }) };
+  var renderer = { hmp: L.canvas({ pane: 'hmp' }), esa: L.canvas({ pane: 'esa' }), asbs: L.canvas({ pane: 'asbs' }), rain: L.canvas({ pane: 'rain', tolerance: 0 }) };
 
   var $ = function (id) { return document.getElementById(id); };
   var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
@@ -63,7 +70,7 @@
   var fmtDist = function (d) { return d >= 5280 ? fmtFt(d) + ' (' + (d / 5280).toFixed(2) + ' mi)' : fmtFt(d); };
   var rainColor = function (v) { return v >= 0.8 ? '#dc2626' : v >= 0.65 ? '#f97316' : '#eab308'; };
 
-  var state = { layers: {}, geo: {}, core: null, visible: { rain: true, esa: true, asbs: true }, site: null, last: null };
+  var state = { layers: {}, geo: {}, core: null, visible: { rain: true, esa: true, asbs: true, hmp: true }, site: null, last: null };
   function setStatus(n, t, c) { var el = $(n + 'Status'); el.textContent = t; el.className = 'status ' + (c || ''); }
   function getJSON(u) { return fetch(u).then(function (r) { if (!r.ok) throw new Error(u + ' ' + r.status); return r.json(); }); }
 
@@ -96,6 +103,19 @@
   var ready = Promise.all([loads.rain, loads.esa, loads.asbs]).then(function () {
     state.core = new S.Layers(state.geo); document.body.dataset.ready = '1'; return state.core;
   });
+  // HMP exemption screen (separate module + data; failure here never affects the other screens)
+  var HMP_STYLE = { 2: '#0e7490', 3: '#0891b2', 4: '#0f766e', 5: '#7c3aed' };
+  var hmpReady = Promise.all(['hmp-exempt-waters', 'hmp-exempt-conveyance', 'hmp-subwatersheds'].map(function (n) { return getJSON('./data/' + n + '.geojson'); })).then(function (gs) {
+    state.geo.hmp = { waters: gs[0], conveyance: gs[1], subwatersheds: gs[2] };
+    state.layers.hmp = L.layerGroup([
+      L.geoJSON(gs[0], { renderer: renderer.hmp, interactive: false, style: function (f) { var c = HMP_STYLE[f.properties.node]; return { color: c, weight: 1.6, fillColor: '#22d3ee', fillOpacity: f.properties.node === 2 ? 0.10 : 0.22 }; } }),
+      L.geoJSON(gs[1], { renderer: renderer.hmp, interactive: false, style: function (f) { return f.properties.kind === 'reach' ? { color: '#7c3aed', weight: 4, opacity: 0.9 } : { color: '#06b6d4', weight: 1.8, opacity: 0.95 }; } })
+    ]);
+    if (state.visible.hmp) state.layers.hmp.addTo(map);
+    setStatus('hmp', 'Loaded', 'ready');
+    state.hmpCore = new window.HMPScreen.Layers(state.geo.hmp); document.body.dataset.hmpReady = '1'; return state.hmpCore;
+  });
+  hmpReady.catch(function (e) { setStatus('hmp', 'Unavailable', 'error'); console.warn('hmp', e); });
 
   // isopluvial labels: one per visible line, at a vertex inside the view near the centre
   var rainLabels = L.layerGroup().addTo(map);
@@ -149,6 +169,8 @@
     try { history.replaceState(null, '', '#' + lat.toFixed(6) + ',' + lon.toFixed(6)); } catch (e) { /* file:// */ }
     return ready.then(function (core) {
       var r = S.screen(core, lat, lon); r.label = label; r.via = opts.via || null; state.last = r;
+      return hmpReady.then(function (hc) { r.hmp = window.HMPScreen.screen(hc, lat, lon); }, function () { r.hmp = null; }).then(function () { return r; });
+    }).then(function (r) {
       drawSite(r); renderResult(r); $('copyBtn').hidden = false;
       document.body.dataset.screened = '1';
       return r;
@@ -167,13 +189,34 @@
     leader(D.nearest_ll, rainColor(D.nearest_line_in), 'Nearest isopluvial ' + D.nearest_line_in.toFixed(2) + ' in, ' + fmtFt(D.nearest_line_dist_ft));
     leader(E.edge_ll, '#16a34a', 'Nearest ESA edge, ' + fmtFt(E.dist_to_edge_ft));
     if (!B.inside.length) leader(B.edge_ll, '#1d4ed8', 'Nearest ASBS boundary, ' + fmtFt(B.dist_ft));
+    var Hn = r.hmp && r.hmp.nearest;
+    if (Hn && !Hn.inside && Hn.dist_ft <= 5280 * 3) leader(Hn.ll, '#0891b2', 'Nearest HMP-exempt feature: ' + Hn.rw + ', ' + fmtFt(Hn.dist_ft));
     L.circleMarker(s, { pane: 'site', radius: 9, color: '#fff', weight: 3, fillColor: '#ef4444', fillOpacity: 1 })
       .bindPopup('<strong>' + esc(r.label) + '</strong><br>Nearest isopluvial: ' + D.nearest_line_in.toFixed(2) + ' in<br>ESA: ' + (E.inside ? 'inside' : 'outside') +
-        '<br>ASBS: ' + (B.inside.length ? 'inside boundary' : A.inside.length ? 'inside drainage area' : 'outside')).addTo(siteLayer);
+        '<br>ASBS: ' + (B.inside.length ? 'inside boundary' : A.inside.length ? 'inside drainage area' : 'outside') +
+        (r.hmp ? '<br>HMP exemption: ' + esc(HMP_LABEL[r.hmp.status]) + (r.hmp.node ? ' (Node ' + r.hmp.node + ', ' + esc(r.hmp.nearest.rw) + ')' : '') : '')).addTo(siteLayer);
   }
 
   function src(k) { var s = SOURCES[k]; return '<p class="src"><b>Source:</b> <a href="' + s.url + '" target="_blank" rel="noopener">' + esc(s.name) + '</a>. ' + esc(s.edition) + '</p>'; }
   function refs(k) { return '<details class="refs"><summary>Manual reference</summary><ul>' + MANUAL[k].map(function (t) { return '<li>' + esc(t) + '</li>'; }).join('') + '</ul></details>'; }
+  var HMP_LABEL = { potential: 'Potentially exempt', verify: 'Verify', not: 'Not exempt (screening)', notmapped: 'Not mapped as exempt', unknown: 'Unavailable' };
+  var HMP_TILE = { potential: ['POTENTIAL', 'hmp-pot'], verify: ['VERIFY', 'hmp-ver'], not: ['NOT EXEMPT', 'hmp-no'], notmapped: ['NOT MAPPED', 'hmp-no'], unknown: ['N/A', 'hmp-no'] };
+  function hmpCard(H) {
+    if (!H) return '<section class="card card-hmp"><h3>HMP exemption screen</h3><p class="err">HMP exemption layers failed to load.</p></section>';
+    var n = H.nearest, cls = H.status === 'potential' ? 'ok' : H.status === 'verify' ? 'warn' : 'flag', h = '';
+    h += '<section class="card card-hmp"><h3>HMP exemption screen (Fig. 1-2)</h3>' +
+      '<div class="status-line">' + badge(HMP_LABEL[H.status], cls) + (H.node ? badge('Node ' + H.node, 'node') : '') + '</div>' +
+      '<p>' + esc(H.summary) + '</p><dl class="kv">' +
+      '<dt>Receiving water</dt><dd>' + esc(H.node ? n.rw : (H.huc && H.huc.rw) || 'Not determined') + '</dd>' +
+      '<dt>Nearest exempt feature</dt><dd>' + esc(n.name) + ', ' + (n.inside ? 'site inside' : fmtDist(n.dist_ft) + ' ' + n.dir) + '</dd>' +
+      (H.nearby.length > 1 ? '<dt>Also within ' + fmtFt(H.thresholds_ft[1]) + '</dt><dd>' + esc(H.nearby.slice(1).map(function (c) { return c.rw + ' (' + fmtFt(c.dist_ft) + ')'; }).join('; ')) + '</dd>' : '') +
+      (H.huc ? '<dt>Subwatershed</dt><dd>' + esc(H.huc.name) + ' (HUC12 ' + esc(H.huc.huc12) + '), ' + esc(H.huc.wma) + ' WMA</dd><dt>Downstream (WBD)</dt><dd>' + esc(H.huc.path) + '</dd>' : '') +
+      '</dl>';
+    if (H.node) h += '<details class="refs" open><summary>' + esc(H.node_title) + ' &ndash; conditions the applicant must show</summary><ul>' + H.conditions.map(function (c) { return '<li>' + esc(c) + '</li>'; }).join('') + '</ul></details>';
+    h += '<details class="refs"><summary>All HMP exemptions (SWS Sec. 1.6)</summary><ul>' + H.common.map(function (c) { return '<li>' + esc(c) + '</li>'; }).join('') + '</ul></details>';
+    h += '<p class="note"><b>Screening only.</b> Potentially exempt = within ' + fmtFt(H.thresholds_ft[0]) + ' of a mapped exempt receiving water, WMAA exempt conveyance system, or exempt river reach (Verify = within ' + fmtFt(H.thresholds_ft[1]) + '). GIS cannot confirm the direct, uninterrupted hardened connection, outfall location or invert elevations the City requires; the exemption is at the City&rsquo;s discretion.</p>';
+    return h + src('hmp') + refs('hmp') + '</section>';
+  }
   function badge(t, cls) { return '<span class="badge ' + cls + '">' + esc(t) + '</span>'; }
 
   function renderResult(r) {
@@ -185,7 +228,9 @@
       '<div class="tile t-rain" style="--c:' + rainColor(D.nearest_line_in) + '"><span>Storm depth</span><b>' + D.nearest_line_in.toFixed(2) + '<small> in</small></b><em>nearest isopluvial</em></div>' +
       '<div class="tile ' + (esaYes ? 'yes' : 'no') + '"><span>In ESA?</span><b>' + (esaYes ? 'YES' : 'NO') + '</b><em>' + (E.near_edge ? 'near edge, verify' : fmtFt(E.dist_to_edge_ft) + (esaYes ? ' to edge' : ' away')) + '</em></div>' +
       '<div class="tile ' + (asbsYes ? 'yes' : 'no') + '"><span>In ASBS area?</span><b>' + (asbsYes ? 'YES' : 'NO') + '</b><em>' + (B.inside.length ? 'ASBS boundary' : A.inside.length ? 'drainage area' : (B.near_edge || A.near_edge) ? 'near edge, verify' : 'boundary + drainage') + '</em></div>' +
-      '</div>';
+      '</div>' +
+      (r.hmp ? '<div class="tile tile-wide ' + HMP_TILE[r.hmp.status][1] + '"><span>HMP exemption (screening)</span><b>' + HMP_TILE[r.hmp.status][0] + '</b><em>' +
+        esc(r.hmp.node ? 'Node ' + r.hmp.node + ' \u00b7 ' + r.hmp.nearest.rw + ' \u00b7 direct discharge must be shown' : (r.hmp.huc && r.hmp.huc.rw ? 'drains to ' + r.hmp.huc.rw : 'no mapped exempt feature nearby')) + '</em></div>' : '');
     // storm depth
     h += '<section class="card card-rain"><h3>85th-percentile 24-hr storm depth</h3>' +
       '<div class="big">' + D.nearest_line_in.toFixed(2) + ' in <small>nearest isopluvial</small></div>' +
@@ -215,6 +260,7 @@
       '<dt>Nearest ASBS boundary</dt><dd>' + esc(B.nearest) + ', ' + (B.inside.length ? 'inside (edge ' + fmtDist(B.edge_dist_ft) + ' ' + B.dir + ')' : fmtDist(B.dist_ft) + ' ' + B.dir) + '</dd>' +
       '<dt>Nearest ASBS drainage area</dt><dd>' + esc(A.nearest) + ', ' + (A.inside.length ? 'inside (edge ' + fmtDist(A.edge_dist_ft) + ' ' + A.dir + ')' : fmtDist(A.dist_ft) + ' ' + A.dir) + '</dd>' +
       '</dl>' + src('asbs') + refs('asbs') + '</section>';
+    h += hmpCard(r.hmp);
     h += '<p class="disclaimer-inline">Preliminary screening - verify with source documents. Not an official City of San Diego product. Distances in NAD83 / CA Zone VI (EPSG:2230) US ft; directions are from the site to the nearest point of each feature.</p>';
     $('resultBody').innerHTML = h;
     r.flags = flags;
@@ -231,7 +277,10 @@
       '  Source: ' + SOURCES.esa.name + '. ' + SOURCES.esa.edition,
       'ASBS boundary: ' + (B.inside.length ? 'INSIDE ' + B.inside.join(', ') : 'outside; nearest ' + B.nearest + ' ' + fmtDist(B.dist_ft) + ' ' + B.dir),
       'ASBS drainage area: ' + (A.inside.length ? 'INSIDE ' + A.inside.join(', ') : 'outside; nearest ' + A.nearest + ' ' + fmtDist(A.dist_ft) + ' ' + A.dir),
-      '  Source: ' + SOURCES.asbs.name + '. ' + SOURCES.asbs.edition].filter(Boolean).join('\n');
+      '  Source: ' + SOURCES.asbs.name + '. ' + SOURCES.asbs.edition,
+      r.hmp ? 'HMP exemption: ' + r.hmp.summary : '',
+      r.hmp && r.hmp.node ? '  ' + r.hmp.node_title + ' conditions: ' + r.hmp.conditions.join(' ') : '',
+      r.hmp ? '  Source: ' + SOURCES.hmp.name + '. ' + SOURCES.hmp.edition + ' ' + MANUAL.hmp[0] : ''].filter(Boolean).join('\n');
   }
   $('copyBtn').addEventListener('click', function () {
     if (!state.last) return; var t = resultText(state.last);
@@ -364,7 +413,7 @@
   // ---------- about dialog ----------
   $('sourceList').innerHTML = Object.keys(SOURCES).map(function (k) { var s = SOURCES[k]; return '<li><a href="' + s.url + '" target="_blank" rel="noopener">' + esc(s.name) + '</a>. ' + esc(s.edition) + '</li>'; }).join('') +
     '<li>Appendix O files are published on the City&rsquo;s <a href="' + LDM + '" target="_blank" rel="noopener">Land Development Manual page</a>.</li>';
-  $('manualList').innerHTML = ['rain', 'esa', 'asbs'].map(function (k) { return MANUAL[k].map(function (t) { return '<li>' + esc(t) + '</li>'; }).join(''); }).join('');
+  $('manualList').innerHTML = ['rain', 'esa', 'asbs', 'hmp'].map(function (k) { return MANUAL[k].map(function (t) { return '<li>' + esc(t) + '</li>'; }).join(''); }).join('');
   var dlg = $('aboutDialog');
   $('aboutBtn').addEventListener('click', function () { dlg.showModal(); });
   $('closeDialog').addEventListener('click', function () { dlg.close(); });
